@@ -123,7 +123,7 @@ int main() {
 
     DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
     DWORD offsetGameToBaseAdress = -0x0000005C;
-    std::vector<DWORD> pointsOffsets{ 0x8, 0x98, 0x10, 0x10, 0xCF8, 0x84, 0x50, 0xC, 0x260 };
+    std::vector<DWORD> pointsOffsets{ 0x8, 0x98, 0x10, 0x10, 0xB5C, 0x24, 0x0, 0x4, 0x260 };
     DWORD baseAddress = NULL;
     //Get value at gamebase+offset -> store it in baseAddress
     ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
@@ -137,7 +137,7 @@ int main() {
     pointsAddress += pointsOffsets.at(pointsOffsets.size() - 1); //Add Last offset -> done!!
 
     //left and right offset
-    std::vector<DWORD> pointsOffsets2{ 0x8, 0x98, 0x10, 0x10, 0xCF8, 0x84, 0x50, 0xC, 0x17C };
+    std::vector<DWORD> pointsOffsets2{ 0x8, 0x98, 0x10, 0x10, 0xB5C, 0x24, 0x0, 0x4, 0x17C };
     
     DWORD pointsAddress2 = baseAddress;
    
@@ -149,7 +149,7 @@ int main() {
     pointsAddress2 += pointsOffsets2.at(pointsOffsets2.size() - 1);
 
     //up and down offset
-    std::vector<DWORD> pointsOffsets3{ 0x8, 0x98, 0x10, 0x10, 0xCF8, 0x84, 0x50, 0xC, 0x174 };
+    std::vector<DWORD> pointsOffsets3{ 0x8, 0x98, 0x10, 0x10, 0xB5C, 0x24, 0x0, 0x4, 0x174 };
 
     DWORD pointsAddress3 = baseAddress;
 
