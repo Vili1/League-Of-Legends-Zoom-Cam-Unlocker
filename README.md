@@ -1,6 +1,7 @@
 # League-Of-Legends-Zoom/Cam-Unlocker
 
 - External zoom/cam unlocker for League Of Lenegnds written in C++
+# [Discord Server](https://discord.gg/qx4NpVvrDF)
 
 - [Donate on paypal](https://www.paypal.com/donate?hosted_button_id=PTRYHABP7FHGN)
 - [Support me on patreon :v](https://www.patreon.com/Vili69)
