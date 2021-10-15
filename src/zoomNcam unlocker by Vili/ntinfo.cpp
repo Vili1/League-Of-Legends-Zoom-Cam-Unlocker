@@ -63,4 +63,3 @@ void* GetThreadStackTopAddress_x86(HANDLE hProcess, HANDLE hThread) {
 
 	return nullptr;
 }
-
