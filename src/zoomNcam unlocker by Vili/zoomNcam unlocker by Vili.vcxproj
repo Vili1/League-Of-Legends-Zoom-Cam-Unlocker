@@ -150,12 +150,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ntinfo.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="resource1.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="zoomNcam unlocker by Vili.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\Icon_league.ico" />
+    <Image Include="..\holyness-logo-light.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
