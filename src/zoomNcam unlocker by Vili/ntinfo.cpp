@@ -23,7 +23,7 @@ enum THREADINFOCLASS
 
 void* GetThreadStackTopAddress_x86(HANDLE hProcess, HANDLE hThread) {
 
-	LPSTR moduleName = "ntdll.dll";
+	const char* moduleName = "ntdll.dll";
 
 	bool loadedManually = false;
 	HMODULE module = GetModuleHandle(moduleName);
