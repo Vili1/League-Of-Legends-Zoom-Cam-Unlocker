@@ -56,7 +56,7 @@ std::vector<DWORD> threadList(DWORD pid)
 
 DWORD GetThreadStartAddress(HANDLE processHandle, HANDLE hThread)
 {
-    DWORD used = 0, ret = 0;
+    //DWORD used = 0, ret = 0;
     DWORD stacktop = 0, result = 0;
     MODULEINFO mi;
     GetModuleInformation(processHandle, GetModuleHandle("kernel32.dll"), &mi, sizeof(mi));
@@ -78,7 +78,7 @@ DWORD GetThreadStartAddress(HANDLE processHandle, HANDLE hThread)
                 }
             }
         }
-        delete buf32;
+        delete[] buf32;
     }
     return result;
 }
@@ -95,6 +95,7 @@ DWORD GetThreadstackStartAddress(int stackNumber, DWORD pID, HANDLE processHandl
         if (stackNum == stackNumber) return threadStartAddress;
         stackNum++;
     }
+    return 0;
 }
 
 
