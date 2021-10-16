@@ -57,7 +57,7 @@ std::vector<DWORD> threadList(DWORD pid)
 
 DWORD GetThreadStartAddress(HANDLE processHandle, HANDLE hThread)
 {
-    DWORD used = 0, ret = 0;
+    //DWORD used = 0, ret = 0;
     DWORD stacktop = 0, result = 0;
     MODULEINFO mi;
     GetModuleInformation(processHandle, GetModuleHandle("kernel32.dll"), &mi, sizeof(mi));
@@ -79,7 +79,7 @@ DWORD GetThreadStartAddress(HANDLE processHandle, HANDLE hThread)
                 }
             }
         }
-        delete buf32;
+        delete[] buf32;
     }
     return result;
 }
@@ -96,6 +96,7 @@ DWORD GetThreadstackStartAddress(int stackNumber, DWORD pID, HANDLE processHandl
         if (stackNum == stackNumber) return threadStartAddress;
         stackNum++;
     }
+    return 0;
 }
 
 /*
@@ -234,6 +235,22 @@ int main()
     reload:
     system("CLS");
     SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+    HWND window;
+    AllocConsole();
+    window = FindWindowA("ConsoleWindowClass", NULL);
+    HWND clientWindow = FindWindow(NULL, "MainWindow");
+    if (clientWindow != NULL);
+    else
+    {
+        ShowWindow(window, 0);
+        MessageBox(clientWindow, "Buy a subscription!", "Don't be GAY!", MB_OK | MB_ICONQUESTION);
+        //std::cout << "Buy a subscription!" << std::endl;
+        system("start https://holyness.shop/product-list/four-columns");
+        //Sleep(5000);
+        //reloadFunk();
+        //goto reload;
+        return 0;
+    }
 
     HWND hGameWindow = FindWindow(NULL, "League of Legends (TM) Client");
     if (hGameWindow != NULL)
@@ -303,9 +320,7 @@ int main()
 
     //LRESULT CALLBACK WindowProc(In HWND   hwnd), In UINT   uMsg, In WPARAM wParam, In LPARAM lParam);
     
-    HWND window;
-    AllocConsole();
-    window = FindWindowA("ConsoleWindowClass", NULL);
+
     ShowWindow(window, 0);
     //mouse
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
@@ -387,7 +402,7 @@ int main()
             system("CLS");
             ShowWindow(window, 1);
             std::cout << "Goodbye! :)" << std::endl;
-            Sleep(5000);
+            Sleep(1000);
             return 0;
         }
 
