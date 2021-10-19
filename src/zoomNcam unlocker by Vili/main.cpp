@@ -3,10 +3,13 @@
 #include <Psapi.h>
 #include <iostream> // cout
 #include <vector> //vector ...
-#include <ctime>
-#include <string>
-#include <sstream>
+//#include <ctime>
+//#include <string>
+//#include <sstream>
 #include "ntinfo.h"
+
+#define SCROLLUP 1
+#define SCROLLDOWN 2
 
 //global vars
 float zoomValue = 1.281169772;
@@ -15,10 +18,11 @@ float upNdown = 56;
 float zoomValueReset = 1.281169772;
 float leftNrightReset = 180;
 float upNdownReset = 56;
-float rotationSpeed = 5.5;
+float rotationSpeed = 5;
 float zoomSpeed = 0.05;
+int scroll = 0;
 
-auto titleGen = [](int num)
+/*auto titleGen = [](int num)
 {
     std::string titleName;
     for (int i = 0; i < num; i++)
@@ -27,6 +31,7 @@ auto titleGen = [](int num)
     }
     return titleName;
 };
+*/
 
 std::vector<DWORD> threadList(DWORD pid)
 {
@@ -130,6 +135,7 @@ DWORD baseAddress = NULL;
 HHOOK hook = NULL;
 
 
+
 LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
     if (nCode != HC_ACTION)
@@ -140,7 +146,7 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
     {
         if (info->mouseData == 0x780000)
         {
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+            //SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
             //std::cout << "debugginfo: baseaddress = " << std::hex << baseAddress << std::endl;
             DWORD pointsAddress = baseAddress; //the Adress we need -> change now while going through offsets
@@ -166,7 +172,7 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
         }
         else
         {
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+            //SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
             //std::cout << "debugginfo: baseaddress = " << std::hex << baseAddress << std::endl;
             DWORD pointsAddress = baseAddress; //the Adress we need -> change now while going through offsets
@@ -198,7 +204,8 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
 
 BOOL WINAPI CtrlHandler(DWORD dwCtrlType)
 {
-    if (hook) {
+    if (hook)
+    {
         UnhookWindowsHookEx(hook);
         hook = NULL;
     }
@@ -206,6 +213,24 @@ BOOL WINAPI CtrlHandler(DWORD dwCtrlType)
     return TRUE;
 }
 
+
+void setupHook()
+{
+    SetConsoleCtrlHandler(CtrlHandler, TRUE);
+    hook = SetWindowsHookExW(WH_MOUSE_LL, MouseHook, nullptr, 0);
+
+    if (!hook)
+    {
+        std::cerr << "SetWindowsHookExW() failed\n";
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Hooked: " << hook << '\n';
+    GetMessageW(nullptr, nullptr, 0, 0);
+
+}
+
+/*
 void ui()
 {
     std::cout << "Up arrow rotates the camera UP" << std::endl;
@@ -216,7 +241,7 @@ void ui()
     std::cout << "Numpad - zoom out" << std::endl;
     std::cout << "Numpad 0 Reset camera position" << std::endl;
     std::cout << "Numpad 1 Restore camera position" << std::endl;
-    std::cout << "Numpad 2 set rotation speed, the default rotation speed is 5.5" << std::endl;
+    std::cout << "Numpad 2 set rotation speed, the default rotation speed is 5" << std::endl;
     std::cout << "Numpad 3 set zoom speed, the default zoom speed is 0.05" << std::endl;
     std::cout << "Numpad 4 shows the console" << std::endl;
     std::cout << "Numpad 5 hides the console" << std::endl;
@@ -228,13 +253,14 @@ void ui()
     std::cout << "Your current zoom speed is: " << std::hex << zoomSpeed << std::endl;
     std::cout << "---------------------------------------------------------------------------" << std::endl;
 }
+*/
 
 
 int main()
 {
-    reload:
-    system("CLS");
-    SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+    //reload:
+    //system("CLS");
+    //SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
     HWND window;
     AllocConsole();
     window = FindWindowA("ConsoleWindowClass", NULL);
@@ -261,7 +287,7 @@ int main()
     else
     {
         std::cout << "Unable to find League of Legends, Please open League of Legends!" << std::endl;
-        Sleep(5000);
+        Sleep(3000);
         //reloadFunk();
         //goto reload;
         return 0;
@@ -274,10 +300,13 @@ int main()
     {
         std::cout << "Try to run the application as administrator.\n";
         std::cout << "---------------------------------------------------------------------------\n";
-        Sleep(5000);
+        Sleep(3000);
         //system("pause");
         return 0;
     }
+
+    //hide the console
+    ShowWindow(window, 0);
 
     DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
     //DWORD offsetGameToBaseAdress = -0x000000D8;
@@ -316,53 +345,45 @@ int main()
     }
     pointsAddress3 += pointsOffsets3.at(pointsOffsets3.size() - 1);
 
-    ui(); //call the UI
+    //ui(); //call the UI
 
-    //LRESULT CALLBACK WindowProc(In HWND   hwnd), In UINT   uMsg, In WPARAM wParam, In LPARAM lParam);
-    
+    //ShowWindow(window, 0);
 
-    ShowWindow(window, 0);
     //mouse
-    SetConsoleCtrlHandler(CtrlHandler, TRUE);
-    hook = SetWindowsHookExW(WH_MOUSE_LL, MouseHook, nullptr, 0);
-
-    if (!hook)
-    {
-        std::cerr << "SetWindowsHookExW() failed\n";
-        return EXIT_FAILURE;
-    }
-
-    //std::cout << "Hooked: " << hook << '\n';
-
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)setupHook, NULL, 0, NULL);
 
     while (true)
     {
-        Sleep(5);
-        if (GetAsyncKeyState(VK_DELETE))
-        {
-            goto reload;
-        }
+
+        Sleep(10);
+        //PeekMessage(nullptr, nullptr, 0, 0, PM_REMOVE);
 
         if (GetAsyncKeyState(VK_NUMPAD0)) //reset
         {
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+            //SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             //WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValueReset, sizeof(float), 0);
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress2), &leftNrightReset, sizeof(float), 0);
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdownReset, sizeof(float), 0);
-            system("CLS");
-            ui();
-            std::cout << "Your camera position has been reset!" << std::endl;
+            //system("CLS");
+            //ui();
+            //std::cout << "Your camera position has been reset!" << std::endl;
         }
 
         if (GetAsyncKeyState(VK_NUMPAD1)) //restore
         {
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+            //SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             //WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress2), &leftNright, sizeof(float), 0);
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
-            system("CLS");
-            ui();
-            std::cout << "Your camera position has been restoerd!" << std::endl;
+            //system("CLS");
+            //ui();
+            //std::cout << "Your camera position has been restoerd!" << std::endl;
+        }
+
+        /*
+        if (GetAsyncKeyState(VK_DELETE))
+        {
+            goto reload;
         }
 
         if (GetAsyncKeyState(VK_NUMPAD2))
@@ -386,7 +407,7 @@ int main()
             ui();
             
         }
-
+        
         if (GetAsyncKeyState(VK_NUMPAD5))
         {
             ShowWindow(window, 0);
@@ -397,18 +418,17 @@ int main()
             ShowWindow(window, 1);
         }
 
+        */
         if (GetAsyncKeyState(VK_NUMPAD6))
         {
-            system("CLS");
-            ShowWindow(window, 1);
-            std::cout << "Goodbye! :)" << std::endl;
-            Sleep(1000);
+            MessageBox(clientWindow, "The zoom unlocker will close when you press OK!", "You have pressed NUMPAD6 to kill the zoom unlocker!", MB_OK | MB_ICONQUESTION);
             return 0;
         }
 
         if (GetAsyncKeyState(VK_ADD)) //numpad +
         {
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+            //Sleep(5);
+            //SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress), &zoomValue, sizeof(float), NULL);
             /*
             zoomValue -= zoomSpeed;
@@ -424,7 +444,8 @@ int main()
 
         if (GetAsyncKeyState(VK_SUBTRACT)) // numpad -
         {
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+            //Sleep(5);
+            //SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress), &zoomValue, sizeof(float), NULL);
             /*
             zoomValue += zoomSpeed;
@@ -439,7 +460,8 @@ int main()
 
         if (GetAsyncKeyState(VK_LEFT)) // LEFT ARROW
         {
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+            //Sleep(5);
+            //SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress2), &leftNright, sizeof(float), NULL);
             leftNright += rotationSpeed;
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress2), &leftNright, sizeof(float), 0);
@@ -447,7 +469,8 @@ int main()
 
         if (GetAsyncKeyState(VK_RIGHT)) // RIGHT ARROW
         {
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+            //Sleep(5);
+            //SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress2), &leftNright, sizeof(float), NULL);
             leftNright -= rotationSpeed;
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress2), &leftNright, sizeof(float), 0);
@@ -455,7 +478,8 @@ int main()
 
         if (GetAsyncKeyState(VK_UP)) // UP ARROW
         {
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+            //Sleep(5);
+            //SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress3), &upNdown, sizeof(float), NULL);
             /*
             upNdown += rotationSpeed;
@@ -470,7 +494,8 @@ int main()
 
         if (GetAsyncKeyState(VK_DOWN)) // DOWN ARROW
         {
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+            //Sleep(5);
+            //SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress3), &upNdown, sizeof(float), NULL);
             /*
             upNdown -= rotationSpeed;
@@ -489,6 +514,5 @@ int main()
             return 0;
         }
 
-        PeekMessage(nullptr, nullptr, 0, 0, PM_REMOVE);
     }
 }
