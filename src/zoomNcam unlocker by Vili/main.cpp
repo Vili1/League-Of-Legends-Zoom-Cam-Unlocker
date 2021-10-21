@@ -130,7 +130,7 @@ DWORD pID = NULL;
 HANDLE processHandle = NULL;
 DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
 DWORD offsetGameToBaseAdress = -0x000000D8;
-std::vector<DWORD> pointsOffsets{ 0x0, 0x8, 0x10, 0x9F4, 0x20, 0x0, 0x4, 0x260 };
+std::vector<DWORD> pointsOffsets{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x260 };
 DWORD baseAddress = NULL;
 HHOOK hook = NULL;
 
@@ -264,7 +264,7 @@ int main()
     HWND window;
     AllocConsole();
     window = FindWindowA("ConsoleWindowClass", NULL);
-    HWND clientWindow = FindWindow(NULL, "MainWindow");
+    HWND clientWindow = FindWindow(NULL, "e11240f4fe281c9eee3c015550f4bb97103270f9d12a7dcdf2c740b795e2cab8");
     if (clientWindow != NULL);
     else
     {
@@ -310,7 +310,7 @@ int main()
 
     DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
     //DWORD offsetGameToBaseAdress = -0x000000D8;
-    //std::vector<DWORD> pointsOffsets{ 0x0, 0x8, 0x10, 0x9F4, 0x20, 0x0, 0x4, 0x260 };
+    //std::vector<DWORD> pointsOffsets{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x260 };
     //DWORD baseAddress = NULL;
     //Get value at gamebase+offset -> store it in baseAddress
     ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
@@ -324,7 +324,7 @@ int main()
     pointsAddress += pointsOffsets.at(pointsOffsets.size() - 1); //Add Last offset -> done!!
 
     //left and right offset
-    std::vector<DWORD> pointsOffsets2{ 0x0, 0x8, 0x10, 0x9F4, 0x20, 0x0, 0x4, 0x17C };
+    std::vector<DWORD> pointsOffsets2{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x17C };
 
     DWORD pointsAddress2 = baseAddress;
 
@@ -335,7 +335,7 @@ int main()
     pointsAddress2 += pointsOffsets2.at(pointsOffsets2.size() - 1);
 
     //up and down offset
-    std::vector<DWORD> pointsOffsets3{ 0x0, 0x8, 0x10, 0x9F4, 0x20, 0x0, 0x4, 0x174 };
+    std::vector<DWORD> pointsOffsets3{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x174 };
 
     DWORD pointsAddress3 = baseAddress;
 
