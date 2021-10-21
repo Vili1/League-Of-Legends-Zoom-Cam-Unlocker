@@ -173,7 +173,7 @@ reload:
 
     DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
     DWORD offsetGameToBaseAdress = -0x000000D8;
-    std::vector<DWORD> pointsOffsets{ 0x0, 0x8, 0x10, 0x9F4, 0x20, 0x0, 0x4, 0x260 };
+    std::vector<DWORD> pointsOffsets{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x260 };
     DWORD baseAddress = NULL;
     //Get value at gamebase+offset -> store it in baseAddress
     ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
@@ -187,7 +187,7 @@ reload:
     pointsAddress += pointsOffsets.at(pointsOffsets.size() - 1); //Add Last offset -> done!!
 
     //left and right offset
-    std::vector<DWORD> pointsOffsets2{ 0x0, 0x8, 0x10, 0x9F4, 0x20, 0x0, 0x4, 0x17C };
+    std::vector<DWORD> pointsOffsets2{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x17C };
 
     DWORD pointsAddress2 = baseAddress;
 
@@ -198,7 +198,7 @@ reload:
     pointsAddress2 += pointsOffsets2.at(pointsOffsets2.size() - 1);
 
     //up and down offset
-    std::vector<DWORD> pointsOffsets3{ 0x0, 0x8, 0x10, 0x9F4, 0x20, 0x0, 0x4, 0x174 };
+    std::vector<DWORD> pointsOffsets3{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x174 };
 
     DWORD pointsAddress3 = baseAddress;
 
@@ -260,14 +260,14 @@ reload:
         {
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress), &zoomValue, sizeof(float), NULL);
-            zoomValue -= zoomSpeed;
-            WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
-            /*if (zoomValue > 0.78)
+            //zoomValue -= zoomSpeed;
+            //WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
+            if (zoomValue > 0.78)
             {
                 zoomValue -= zoomSpeed;
                 WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
             }
-            */
+            
         }
 
         if (GetAsyncKeyState(VK_SUBTRACT)) // numpad -
@@ -275,15 +275,15 @@ reload:
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress), &zoomValue, sizeof(float), NULL);
             
-            zoomValue += zoomSpeed;
-            WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
-            /*
+            //zoomValue += zoomSpeed;
+            //WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
+            
             if (zoomValue < 2.7)
             {
                 zoomValue += zoomSpeed;
                 WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
             }
-            */
+            
         }
 
         if (GetAsyncKeyState(VK_LEFT)) // LEFT ARROW
@@ -306,30 +306,30 @@ reload:
         {
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress3), &upNdown, sizeof(float), NULL);
-            upNdown += rotationSpeed;
-            WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
-            /*
-            if (upNdown < 160)
+            //upNdown += rotationSpeed;
+            //WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
+            
+            if (upNdown < 89)
             {
                 upNdown += rotationSpeed;
                 WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
             }
-            */
+            
         }
 
         if (GetAsyncKeyState(VK_DOWN)) // DOWN ARROW
         {
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress3), &upNdown, sizeof(float), NULL);
-            upNdown -= rotationSpeed;
-            WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
-            /*
+            //upNdown -= rotationSpeed;
+            //WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
+            
             if (upNdown > 20)
             {
                 upNdown -= rotationSpeed;
                 WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
             }
-            */
+            
         }
     }
 }
