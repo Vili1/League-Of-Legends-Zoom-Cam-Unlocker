@@ -18,7 +18,7 @@ float upNdown = 56;
 float zoomValueReset = 1.281169772;
 float leftNrightReset = 180;
 float upNdownReset = 56;
-float rotationSpeed = 5;
+float rotationSpeed = 5.5;
 float zoomSpeed = 0.05;
 int scroll = 0;
 
@@ -241,7 +241,7 @@ void ui()
     std::cout << "Numpad - zoom out" << std::endl;
     std::cout << "Numpad 0 Reset camera position" << std::endl;
     std::cout << "Numpad 1 Restore camera position" << std::endl;
-    std::cout << "Numpad 2 set rotation speed, the default rotation speed is 5" << std::endl;
+    std::cout << "Numpad 2 set rotation speed, the default rotation speed is 5.5" << std::endl;
     std::cout << "Numpad 3 set zoom speed, the default zoom speed is 0.05" << std::endl;
     std::cout << "Numpad 4 shows the console" << std::endl;
     std::cout << "Numpad 5 hides the console" << std::endl;
@@ -485,7 +485,7 @@ int main()
             upNdown += rotationSpeed;
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
             */
-            if (upNdown < 160)
+            if (upNdown < 89)
             {
                 upNdown += rotationSpeed;
                 WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
@@ -501,7 +501,7 @@ int main()
             upNdown -= rotationSpeed;
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
             */
-            if (upNdown > 20)
+            if (upNdown > 12)
             {
                 upNdown -= rotationSpeed;
                 WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
