@@ -3,6 +3,7 @@
 #include <Psapi.h>
 #include <iostream> // cout
 #include <vector> //vector ...
+#include <array>
 //#include <ctime>
 //#include <string>
 //#include <sstream>
@@ -15,11 +16,11 @@
 float zoomValue = 1.281169772;
 float leftNright = 180;
 float upNdown = 56;
-float zoomValueReset = 1.281169772;
-float leftNrightReset = 180;
-float upNdownReset = 56;
-float rotationSpeed = 5.5;
-float zoomSpeed = 0.05;
+//float zoomValueReset = 1.281169772;
+const float leftNrightReset = 180;
+const float upNdownReset = 56;
+const float rotationSpeed = 5.5;
+const float zoomSpeed = 0.05;
 int scroll = 0;
 
 /*auto titleGen = [](int num)
@@ -130,7 +131,7 @@ DWORD pID = NULL;
 HANDLE processHandle = NULL;
 DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
 DWORD offsetGameToBaseAdress = -0x000000D8;
-std::vector<DWORD> pointsOffsets{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x260 };
+std::array<DWORD,8> pointsOffsets{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x260 };
 DWORD baseAddress = NULL;
 HHOOK hook = NULL;
 
@@ -310,7 +311,7 @@ int main()
 
     DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
     //DWORD offsetGameToBaseAdress = -0x000000D8;
-    //std::vector<DWORD> pointsOffsets{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x260 };
+    //std::array<DWORD,8> pointsOffsets{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x260 };
     //DWORD baseAddress = NULL;
     //Get value at gamebase+offset -> store it in baseAddress
     ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
@@ -324,7 +325,7 @@ int main()
     pointsAddress += pointsOffsets.at(pointsOffsets.size() - 1); //Add Last offset -> done!!
 
     //left and right offset
-    std::vector<DWORD> pointsOffsets2{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x17C };
+    std::array<DWORD,8> pointsOffsets2{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x17C };
 
     DWORD pointsAddress2 = baseAddress;
 
@@ -335,7 +336,7 @@ int main()
     pointsAddress2 += pointsOffsets2.at(pointsOffsets2.size() - 1);
 
     //up and down offset
-    std::vector<DWORD> pointsOffsets3{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x174 };
+    std::array<DWORD,8> pointsOffsets3{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x174 };
 
     DWORD pointsAddress3 = baseAddress;
 
@@ -501,7 +502,7 @@ int main()
             upNdown -= rotationSpeed;
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
             */
-            if (upNdown > 12)
+            if (upNdown > 17.5)
             {
                 upNdown -= rotationSpeed;
                 WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
