@@ -18,6 +18,71 @@ float upNdownReset = 56;
 float rotationSpeed = 5.5;
 float zoomSpeed = 0.05;
 
+void polymorphic()
+{
+    std::srand(std::time(0));
+
+    for (int count = 0; count < 10; count++)
+    {
+        int index = rand() % (6 - 0 + 1) + 0;
+
+        switch (index)
+        {
+        case 0:
+            __asm __volatile
+                {
+                    sub eax, 3
+                    add eax, 1
+                    add eax, 2
+                }
+
+        case 1:
+            __asm __volatile
+                {
+                    push eax
+                    pop eax
+                }
+
+
+        case 2:
+            __asm __volatile
+                {
+                    inc eax
+                    dec eax
+                }
+
+        case 3:
+            __asm __volatile
+                {
+                    dec eax
+                    add eax, 1
+                }
+
+        case 4:
+            __asm __volatile
+                {
+                    pop eax
+                    push eax
+                }
+
+        case 5:
+            __asm __volatile
+                {
+                    mov eax, eax
+                    sub eax, 1
+                    add eax, 1
+                }
+
+        case 6:
+            __asm __volatile
+                {
+                    xor eax, eax
+                    mov eax, eax
+                }
+        }
+    }
+}
+
 auto titleGen = [](int num)
 {
     std::string titleName;
@@ -142,6 +207,7 @@ int main()
 {
 reload:
     system("CLS");
+    polymorphic();
     SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
 
     HWND hGameWindow = FindWindow(NULL, "League of Legends (TM) Client");
@@ -220,6 +286,7 @@ reload:
 
         if (GetAsyncKeyState(VK_NUMPAD0)) //reset
         {
+            polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValueReset, sizeof(float), 0);
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress2), &leftNrightReset, sizeof(float), 0);
@@ -231,6 +298,7 @@ reload:
 
         if (GetAsyncKeyState(VK_NUMPAD1)) //restore
         {
+            polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
             WriteProcessMemory(processHandle, (LPVOID)(pointsAddress2), &leftNright, sizeof(float), 0);
@@ -258,6 +326,7 @@ reload:
 
         if (GetAsyncKeyState(VK_ADD)) //numpad +
         {
+            polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress), &zoomValue, sizeof(float), NULL);
             //zoomValue -= zoomSpeed;
@@ -272,6 +341,7 @@ reload:
 
         if (GetAsyncKeyState(VK_SUBTRACT)) // numpad -
         {
+            polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress), &zoomValue, sizeof(float), NULL);
             
@@ -288,6 +358,7 @@ reload:
 
         if (GetAsyncKeyState(VK_LEFT)) // LEFT ARROW
         {
+            polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress2), &leftNright, sizeof(float), NULL);
             leftNright += rotationSpeed;
@@ -296,6 +367,7 @@ reload:
 
         if (GetAsyncKeyState(VK_RIGHT)) // RIGHT ARROW
         {
+            polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress2), &leftNright, sizeof(float), NULL);
             leftNright -= rotationSpeed;
@@ -304,6 +376,7 @@ reload:
 
         if (GetAsyncKeyState(VK_UP)) // UP ARROW
         {
+            polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress3), &upNdown, sizeof(float), NULL);
             //upNdown += rotationSpeed;
@@ -319,12 +392,13 @@ reload:
 
         if (GetAsyncKeyState(VK_DOWN)) // DOWN ARROW
         {
+            polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress3), &upNdown, sizeof(float), NULL);
             //upNdown -= rotationSpeed;
             //WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
             
-            if (upNdown > 20)
+            if (upNdown > 17.5)
             {
                 upNdown -= rotationSpeed;
                 WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
