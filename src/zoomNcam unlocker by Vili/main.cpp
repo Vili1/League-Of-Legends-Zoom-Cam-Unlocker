@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include "ntinfo.h"
+#include <tchar.h> 
 
 #define SCROLLUP 1
 #define SCROLLDOWN 2
@@ -33,13 +34,6 @@ auto titleGen = [](int num)
     }
     return titleName;
 };
-
-void hideConsole()
-{
-    AllocConsole();
-    window = FindWindowA("ConsoleWindowClass", NULL);
-    ShowWindow(window, 0);
-}
 
 void polymorphic()
 {
@@ -96,6 +90,30 @@ void polymorphic()
         }
     }
 }
+
+DWORD dwGetModuleBaseAddress(TCHAR* lpszModuleName, DWORD pID)
+{
+    DWORD dwModuleBaseAddress = 0;
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pID);
+    MODULEENTRY32 ModuleEntry32 = { 0 };
+    ModuleEntry32.dwSize = sizeof(MODULEENTRY32);
+
+    if (Module32First(hSnapshot, &ModuleEntry32))
+    {
+        do
+        {
+            if (_tcscmp(ModuleEntry32.szModule, lpszModuleName) == 0)
+            {
+                dwModuleBaseAddress = (DWORD)ModuleEntry32.modBaseAddr;
+                break;
+            }
+        } while (Module32Next(hSnapshot, &ModuleEntry32));
+
+    }
+    CloseHandle(hSnapshot);
+    return dwModuleBaseAddress;
+}
+
 
 std::vector<DWORD> threadList(DWORD pid)
 {
@@ -168,7 +186,7 @@ DWORD pID = NULL;
 HANDLE processHandle = NULL;
 DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
 DWORD offsetGameToBaseAdress = -0x000000D8;
-std::array<DWORD, 8> pointsOffsets{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x260 };
+std::array<DWORD, 8> camZOffsets{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x260 };
 DWORD baseAddress = NULL;
 HHOOK hook = NULL;
 
@@ -185,17 +203,17 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
             polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
-            DWORD pointsAddress = baseAddress;
-            for (int i = 0; i < pointsOffsets.size() - 1; i++) 
+            DWORD camZAddress = baseAddress;
+            for (int i = 0; i < camZOffsets.size() - 1; i++)
             {
-                ReadProcessMemory(processHandle, (LPVOID)(pointsAddress + pointsOffsets.at(i)), &pointsAddress, sizeof(pointsAddress), NULL);
+                ReadProcessMemory(processHandle, (LPVOID)(camZAddress + camZOffsets.at(i)), &camZAddress, sizeof(camZAddress), NULL);
             }
-            pointsAddress += pointsOffsets.at(pointsOffsets.size() - 1);
-            ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress), &zoomValue, sizeof(float), NULL);
+            camZAddress += camZOffsets.at(camZOffsets.size() - 1);
+            ReadProcessMemory(processHandle, (LPCVOID)(camZAddress), &zoomValue, sizeof(float), NULL);
             if (zoomValue > 0.78)
             {
                 zoomValue -= zoomSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
             }
         }
         else
@@ -203,17 +221,17 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
             polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
-            DWORD pointsAddress = baseAddress;
-            for (int i = 0; i < pointsOffsets.size() - 1; i++)
+            DWORD camZAddress = baseAddress;
+            for (int i = 0; i < camZOffsets.size() - 1; i++)
             {
-                ReadProcessMemory(processHandle, (LPVOID)(pointsAddress + pointsOffsets.at(i)), &pointsAddress, sizeof(pointsAddress), NULL);
+                ReadProcessMemory(processHandle, (LPVOID)(camZAddress + camZOffsets.at(i)), &camZAddress, sizeof(camZAddress), NULL);
             }
-            pointsAddress += pointsOffsets.at(pointsOffsets.size() - 1);
-            ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress), &zoomValue, sizeof(float), NULL);
+            camZAddress += camZOffsets.at(camZOffsets.size() - 1);
+            ReadProcessMemory(processHandle, (LPCVOID)(camZAddress), &zoomValue, sizeof(float), NULL);
             if (zoomValue < 2.7)
             {
                 zoomValue += zoomSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
             }
         }
     }
@@ -247,7 +265,6 @@ void integrityCheck()
     HWND clientWindow = FindWindow(NULL, "e11240f4fe281c9eee3c015550f4bb97103270f9d12a7dcdf2c740b795e2cab8");
     if (clientWindow == NULL)
     {
-        hideConsole();
         MessageBox(NULL, "Buy a subscription!", "Don't be GAY!", MB_OK | MB_ICONQUESTION);
         system("start https://holyness.shop/product-list/four-columns");
         exit(EXIT_FAILURE);
@@ -259,7 +276,6 @@ void findGameWindowToHook()
     if (hGameWindow != NULL)
     {
         std::cout << "League of Legends found successfully!" << std::endl;
-        hideConsole();
     }
     else
     {
@@ -290,6 +306,53 @@ void checkGameToExit()
     }
 }
 
+void cam3dPerson()
+{
+
+    char moduleName[] = "League of Legends.exe";
+    DWORD gameBaseAddress = dwGetModuleBaseAddress(_T(moduleName), pID);
+    DWORD offsetGameToBaseAddress = 0x0310990C;
+    std::array<DWORD, 1> localPlayerDirectionOffsets{ 0x9c };
+    //DWORD baseAddress;
+
+    ReadProcessMemory(processHandle, (LPVOID)(gameBaseAddress + offsetGameToBaseAddress), &baseAddress, sizeof(baseAddress), NULL);
+    std::cout << "Debugginfo: Baseaddress = " << std::hex << baseAddress << std::endl;
+    DWORD localPlayerDirectionAddress = baseAddress;
+    for (int i = 0; i < localPlayerDirectionOffsets.size() - 1; i++)
+    {
+        ReadProcessMemory(processHandle, (LPVOID)(localPlayerDirectionAddress + localPlayerDirectionOffsets.at(i)), &localPlayerDirectionAddress, sizeof(localPlayerDirectionAddress), NULL);
+        std::cout << "Debugginfo: address at offset = " << std::hex << localPlayerDirectionAddress << std::endl;
+    }
+    localPlayerDirectionAddress += localPlayerDirectionOffsets.at(localPlayerDirectionOffsets.size() - 1);
+    std::cout << "Debugginfo: address at final offset = " << std::hex << localPlayerDirectionAddress << std::endl;
+    std::cout << "------------------------------------------------------" << std::endl;
+
+    float localPlayerDirection = 1.57;
+;
+
+    int randomNumber = 0;
+    while (true)
+    {
+        //Sleep(30);
+        for (int index = 0; index < 5; index++) {
+            //int randomNumber = 0;
+            randomNumber = (rand() % 100) + 1;
+            // cout << randomNumber << endl;
+        }
+        // a,d,w,s keys
+        if (GetAsyncKeyState(0x41)) // A left
+        {
+    
+            localPlayerDirection += randomNumber;
+            WriteProcessMemory(processHandle,(LPVOID)(localPlayerDirectionAddress), &localPlayerDirection, sizeof(float), 0);
+        }
+
+
+
+    }
+
+}
+
 int main()
 {
     SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
@@ -304,34 +367,36 @@ int main()
 
     checkProcessHandle();
 
+    
+
     DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
 
     ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
-    DWORD pointsAddress = baseAddress;
-    for (int i = 0; i < pointsOffsets.size() - 1; i++)
+    DWORD camZAddress = baseAddress;
+    for (int i = 0; i < camZOffsets.size() - 1; i++)
     {
-        ReadProcessMemory(processHandle, (LPVOID)(pointsAddress + pointsOffsets.at(i)), &pointsAddress, sizeof(pointsAddress), NULL);
+        ReadProcessMemory(processHandle, (LPVOID)(camZAddress + camZOffsets.at(i)), &camZAddress, sizeof(camZAddress), NULL);
     }
-    pointsAddress += pointsOffsets.at(pointsOffsets.size() - 1);
+    camZAddress += camZOffsets.at(camZOffsets.size() - 1);
 
     //left and right offset
-    std::array<DWORD,8> pointsOffsets2{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x17C };
-    DWORD pointsAddress2 = baseAddress;
-    for (int i = 0; i < pointsOffsets2.size() - 1; i++)
+    std::array<DWORD,8> camXOffsets{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x17C };
+    DWORD camXAddress = baseAddress;
+    for (int i = 0; i < camXOffsets.size() - 1; i++)
     {
-        ReadProcessMemory(processHandle, (LPVOID)(pointsAddress2 + pointsOffsets2.at(i)), &pointsAddress2, sizeof(pointsAddress2), NULL);
+        ReadProcessMemory(processHandle, (LPVOID)(camXAddress + camXOffsets.at(i)), &camXAddress, sizeof(camXAddress), NULL);
     }
-    pointsAddress2 += pointsOffsets2.at(pointsOffsets2.size() - 1);
+    camXAddress += camXOffsets.at(camXOffsets.size() - 1);
 
     //up and down offset
-    std::array<DWORD,8> pointsOffsets3{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x174 };
-    DWORD pointsAddress3 = baseAddress;
+    std::array<DWORD,8> camYOffsets{ 0x0, 0x8, 0x10, 0xDC0, 0x20, 0x0, 0x4, 0x174 };
+    DWORD camYAddress = baseAddress;
 
-    for (int i = 0; i < pointsOffsets3.size() - 1; i++)
+    for (int i = 0; i < camYOffsets.size() - 1; i++)
     {
-        ReadProcessMemory(processHandle, (LPVOID)(pointsAddress3 + pointsOffsets3.at(i)), &pointsAddress3, sizeof(pointsAddress3), NULL);
+        ReadProcessMemory(processHandle, (LPVOID)(camYAddress + camYOffsets.at(i)), &camYAddress, sizeof(camYAddress), NULL);
     }
-    pointsAddress3 += pointsOffsets3.at(pointsOffsets3.size() - 1);
+    camYAddress += camYOffsets.at(camYOffsets.size() - 1);
 
     //mouse
     CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)setupHook, NULL, 0, NULL);
@@ -345,17 +410,16 @@ int main()
         {
             polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
-            WriteProcessMemory(processHandle, (LPVOID)(pointsAddress2), &leftNrightReset, sizeof(float), 0);
-            WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdownReset, sizeof(float), 0);
-
+            WriteProcessMemory(processHandle, (LPVOID)(camXAddress), &leftNrightReset, sizeof(float), 0);
+            WriteProcessMemory(processHandle, (LPVOID)(camYAddress), &upNdownReset, sizeof(float), 0);
         }
 
         if (GetAsyncKeyState(VK_NUMPAD1)) //restore
         {
             polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
-            WriteProcessMemory(processHandle, (LPVOID)(pointsAddress2), &leftNright, sizeof(float), 0);
-            WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
+            WriteProcessMemory(processHandle, (LPVOID)(camXAddress), &leftNright, sizeof(float), 0);
+            WriteProcessMemory(processHandle, (LPVOID)(camYAddress), &upNdown, sizeof(float), 0);
 
         }
 
@@ -369,12 +433,12 @@ int main()
         {
             polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
-            ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress), &zoomValue, sizeof(float), NULL);
+            ReadProcessMemory(processHandle, (LPCVOID)(camZAddress), &zoomValue, sizeof(float), NULL);
             
             if (zoomValue > 0.78)
             {
                 zoomValue -= zoomSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
             }
             
         }
@@ -383,12 +447,12 @@ int main()
         {
             polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
-            ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress), &zoomValue, sizeof(float), NULL);
+            ReadProcessMemory(processHandle, (LPCVOID)(camZAddress), &zoomValue, sizeof(float), NULL);
            
             if(zoomValue < 2.7)
             {
                 zoomValue += zoomSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(pointsAddress), &zoomValue, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
             } 
         }
 
@@ -396,30 +460,30 @@ int main()
         {
             polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
-            ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress2), &leftNright, sizeof(float), NULL);
+            ReadProcessMemory(processHandle, (LPCVOID)(camXAddress), &leftNright, sizeof(float), NULL);
             leftNright += rotationSpeed;
-            WriteProcessMemory(processHandle, (LPVOID)(pointsAddress2), &leftNright, sizeof(float), 0);
+            WriteProcessMemory(processHandle, (LPVOID)(camXAddress), &leftNright, sizeof(float), 0);
         }
 
         if (GetAsyncKeyState(VK_RIGHT)) // RIGHT ARROW
         {
             polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
-            ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress2), &leftNright, sizeof(float), NULL);
+            ReadProcessMemory(processHandle, (LPCVOID)(camXAddress), &leftNright, sizeof(float), NULL);
             leftNright -= rotationSpeed;
-            WriteProcessMemory(processHandle, (LPVOID)(pointsAddress2), &leftNright, sizeof(float), 0);
+            WriteProcessMemory(processHandle, (LPVOID)(camXAddress), &leftNright, sizeof(float), 0);
         }
 
         if (GetAsyncKeyState(VK_UP)) // UP ARROW
         {
             polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
-            ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress3), &upNdown, sizeof(float), NULL);
+            ReadProcessMemory(processHandle, (LPCVOID)(camYAddress), &upNdown, sizeof(float), NULL);
 
             if (upNdown < 89)
             {
                 upNdown += rotationSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camYAddress), &upNdown, sizeof(float), 0);
             }
         }
 
@@ -427,13 +491,22 @@ int main()
         {
             polymorphic();
             SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
-            ReadProcessMemory(processHandle, (LPCVOID)(pointsAddress3), &upNdown, sizeof(float), NULL);
+            ReadProcessMemory(processHandle, (LPCVOID)(camYAddress), &upNdown, sizeof(float), NULL);
 
             if (upNdown > 17.5)
             {
                 upNdown -= rotationSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(pointsAddress3), &upNdown, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camYAddress), &upNdown, sizeof(float), 0);
             }
+        }
+
+        if (GetAsyncKeyState(VK_F5)) //3d person
+        {
+            polymorphic();
+            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+            WriteProcessMemory(processHandle, (LPVOID)(camXAddress), &leftNrightReset, sizeof(float), 0);
+            WriteProcessMemory(processHandle, (LPVOID)(camYAddress), &upNdownReset, sizeof(float), 0);
+            cam3dPerson();
         }
 
         checkGameToExit();
