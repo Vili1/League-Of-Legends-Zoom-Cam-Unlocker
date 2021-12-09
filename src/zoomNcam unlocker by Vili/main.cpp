@@ -115,7 +115,7 @@ DWORD dwGetModuleBaseAddress(TCHAR* lpszModuleName, DWORD pID)
 DWORD pID = NULL;
 HANDLE processHandle = NULL;
 char moduleName[] = "League of Legends.exe";
-DWORD offsetGameToBaseAddress = 0x0186CD58;
+DWORD offsetGameToBaseAddress = 0x0186CD9C;
 std::array<DWORD, 2> camZOffsets{ 0xC, 0x260 };
 DWORD baseAddress = NULL;
 HHOOK hook = NULL;
@@ -197,6 +197,7 @@ void integrityCheck()
     {
         MessageBox(NULL, "Buy a subscription!", "Don't be GAY!", MB_OK | MB_ICONQUESTION);
         system("start https://holyness.shop/product-list/four-columns");
+        system("start https://sellix.io/Holyness");
         exit(EXIT_FAILURE);
     }
 }
