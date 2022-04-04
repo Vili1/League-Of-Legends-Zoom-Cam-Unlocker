@@ -8,6 +8,9 @@
 #include <string>
 #include <sstream>
 #include "ntinfo.h"
+#include <winbase.h>
+#include <string.h>
+#include <process.h>
 
 #define SCROLLUP 1
 #define SCROLLDOWN 2
@@ -24,12 +27,34 @@ int scroll = 0;
 HWND hGameWindow = FindWindow(NULL, "League of Legends (TM) Client");
 HWND window;
 
+void killProcessByName(const char* filename)
+{
+    HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, NULL);
+    PROCESSENTRY32 pEntry;
+    pEntry.dwSize = sizeof(pEntry);
+    BOOL hRes = Process32First(hSnapShot, &pEntry);
+    while (hRes)
+    {
+        if (strcmp(pEntry.szExeFile, filename) == 0)
+        {
+            HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, 0, (DWORD)pEntry.th32ProcessID);
+            if (hProcess != NULL)
+            {
+                TerminateProcess(hProcess, 9);
+                CloseHandle(hProcess);
+            }
+        }
+        hRes = Process32Next(hSnapShot, &pEntry);
+    }
+    CloseHandle(hSnapShot);
+}
+
 auto titleGen = [](int num)
 {
     std::string titleName;
     for (int i = 0; i < num; i++)
     {
-        titleName += rand() % 100 + 30;
+        titleName += rand() % 300 + 300;
     }
     return titleName;
 };
@@ -161,7 +186,7 @@ DWORD pID = NULL;
 HANDLE processHandle = NULL;
 DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
 DWORD offsetGameToBaseAdress = -0x000000D8;
-std::array<DWORD, 8> camZOffsets{ 0x0, 0x8, 0xC, 0xB0, 0x20, 0x0, 0x4, 0x260 };
+std::array<DWORD, 8> camZOffsets{ 0x0, 0x8, 0xC, 0xB0, 0x20, 0x0, 0x4, 0x25C };
 DWORD baseAddress = NULL;
 HHOOK hook = NULL;
 
@@ -175,8 +200,6 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
     {
         if (info->mouseData == 0x780000)
         {
-            polymorphic();
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             DWORD camZAddress = baseAddress;
             for (int i = 0; i < camZOffsets.size() - 1; i++)
             {
@@ -192,8 +215,6 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
         }
         else
         {
-            polymorphic();
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             DWORD camZAddress = baseAddress;
             for (int i = 0; i < camZOffsets.size() - 1; i++)
             {
@@ -239,7 +260,7 @@ void integrityCheck()
     if (clientWindow == NULL)
     {
         MessageBox(NULL, "Buy a subscription!", "Don't be GAY!", MB_OK | MB_ICONQUESTION);
-        system("start https://holyness.shop/product-list/four-columns");
+        system("start https://holyness.sellix.io");
         exit(EXIT_FAILURE);
     }
 }
@@ -279,12 +300,42 @@ void checkGameToExit()
     }
 }
 
+void antiTamp()
+{
+    while(true)
+    {
+        Sleep(10);
+        killProcessByName("consent.exe");
+    }
+
+}
+
+void callPoly()
+{
+    while (true)
+    {
+        polymorphic();
+        Sleep(100);
+    }
+
+}
+
+void callTitle()
+{
+    while (true)
+    {
+        SetConsoleTitleA(titleGen(rand() % 300 + 300).c_str());
+        Sleep(100);
+    }
+
+}
+
 int main()
 {
-    SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)antiTamp, NULL, 0, NULL);
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)callPoly, NULL, 0, NULL);
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)callTitle, NULL, 0, NULL);
 
-    polymorphic();
-    
     integrityCheck();
    
     findGameWindowToHook();
@@ -306,7 +357,7 @@ int main()
 
     //mouse
     CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)setupHook, NULL, 0, NULL);
-    polymorphic();
+
 
     while (true)
     {
@@ -314,16 +365,12 @@ int main()
 
         if (GetAsyncKeyState(VK_NUMPAD0)) //reset
         {
-            polymorphic();
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 228), &leftNrightReset, sizeof(float), 0);
             WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 236), &upNdownReset, sizeof(float), 0);
         }
 
         if (GetAsyncKeyState(VK_NUMPAD1)) //restore
         {
-            polymorphic();
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 228), &leftNright, sizeof(float), 0);
             WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 236), &upNdown, sizeof(float), 0);
 
@@ -331,41 +378,35 @@ int main()
 
         if (GetAsyncKeyState(VK_NUMPAD6))
         {
-            MessageBox(NULL,"The zoom unlocker will close when you press OK!", "You have pressed NUMPAD6 to kill the zoom unlocker!", MB_OK | MB_ICONQUESTION);
+            MessageBox(NULL, "The zoom unlocker will close when you press OK!", "You have pressed NUMPAD6 to kill the zoom unlocker!", MB_OK | MB_ICONQUESTION);
             return 0;
         }
 
         if (GetAsyncKeyState(VK_ADD)) //numpad +
         {
-            polymorphic();
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(camZAddress), &zoomValue, sizeof(float), NULL);
-            
+
             if (zoomValue > 0.78)
             {
                 zoomValue -= zoomSpeed;
                 WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
             }
-            
+
         }
 
         if (GetAsyncKeyState(VK_SUBTRACT)) // numpad -
         {
-            polymorphic();
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(camZAddress), &zoomValue, sizeof(float), NULL);
-           
-            if(zoomValue < 2.7)
+
+            if (zoomValue < 2.7)
             {
                 zoomValue += zoomSpeed;
                 WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
-            } 
+            }
         }
 
         if (GetAsyncKeyState(VK_LEFT)) // LEFT ARROW
         {
-            polymorphic();
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(camZAddress - 228), &leftNright, sizeof(float), NULL);
             leftNright += rotationSpeed;
             WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 228), &leftNright, sizeof(float), 0);
@@ -373,8 +414,6 @@ int main()
 
         if (GetAsyncKeyState(VK_RIGHT)) // RIGHT ARROW
         {
-            polymorphic();
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(camZAddress - 228), &leftNright, sizeof(float), NULL);
             leftNright -= rotationSpeed;
             WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 228), &leftNright, sizeof(float), 0);
@@ -382,9 +421,7 @@ int main()
 
         if (GetAsyncKeyState(VK_UP)) // UP ARROW
         {
-            polymorphic();
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
-            ReadProcessMemory(processHandle, (LPCVOID)(camZAddress- 236), &upNdown, sizeof(float), NULL);
+            ReadProcessMemory(processHandle, (LPCVOID)(camZAddress - 236), &upNdown, sizeof(float), NULL);
 
             if (upNdown < 89)
             {
@@ -395,8 +432,6 @@ int main()
 
         if (GetAsyncKeyState(VK_DOWN)) // DOWN ARROW
         {
-            polymorphic();
-            SetConsoleTitleA(titleGen(rand() % 100 + 30).c_str());
             ReadProcessMemory(processHandle, (LPCVOID)(camZAddress - 236), &upNdown, sizeof(float), NULL);
 
             if (upNdown > 17.5)
