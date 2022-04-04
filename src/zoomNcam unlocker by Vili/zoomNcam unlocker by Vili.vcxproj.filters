@@ -26,6 +26,12 @@
     <ClInclude Include="ntinfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="zoomNcam unlocker by Vili.rc">
@@ -33,7 +39,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\Icon_league.ico">
+    <Image Include="..\holyness-logo-light.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

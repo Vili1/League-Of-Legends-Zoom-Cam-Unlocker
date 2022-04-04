@@ -21,7 +21,8 @@ enum THREADINFOCLASS
 	ThreadBasicInformation,
 };
 
-void* GetThreadStackTopAddress_x86(HANDLE hProcess, HANDLE hThread) {
+void* GetThreadStackTopAddress_x86(HANDLE hProcess, HANDLE hThread)
+{
 
 	const char* moduleName = "ntdll.dll";
 
