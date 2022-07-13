@@ -51,6 +51,7 @@ void killProcessByName(const char* filename)
 
 auto titleGen = [](int num)
 {
+    std::srand(std::time(0));
     std::string titleName;
     for (int i = 0; i < num; i++)
     {
@@ -185,7 +186,7 @@ DWORD GetThreadstackStartAddress(int stackNumber, DWORD pID, HANDLE processHandl
 DWORD pID = NULL;
 HANDLE processHandle = NULL;
 DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
-DWORD offsetGameToBaseAdress = -0x000000D8;
+DWORD offsetGameToBaseAdress = -0x000000C4;
 std::array<DWORD, 8> camZOffsets{ 0x0, 0x8, 0xC, 0xB0, 0x20, 0x0, 0x4, 0x25C };
 DWORD baseAddress = NULL;
 HHOOK hook = NULL;
