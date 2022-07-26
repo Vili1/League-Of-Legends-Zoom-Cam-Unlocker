@@ -311,7 +311,7 @@ void callTitle()
 
 }
 
-void intPRT()
+void iniPRT()
 {
     DWORD offsetGameToBaseAdress = -0x000000C4;
     std::array<DWORD, 8> camZOffsets{ 0x0, 0x8, 0xC, 0xB0, 0x20, 0x0, 0x4, 0x25C };
@@ -343,7 +343,7 @@ int main()
 
     checkProcessHandle();
 
-    intPRT();
+    iniPRT();
 
     //mouse
     CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)setupHook, NULL, 0, NULL);
