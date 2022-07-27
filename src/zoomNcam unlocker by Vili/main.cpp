@@ -52,17 +52,6 @@ void killProcessByName(const char* filename)
     CloseHandle(hSnapShot);
 }
 
-auto titleGen = [](int num)
-{
-    std::srand(std::time(0));
-    std::string titleName;
-    for (int i = 0; i < num; i++)
-    {
-        titleName += rand() % 300 + 300;
-    }
-    return titleName;
-};
-
 void polymorphic()
 {
     std::srand(std::time(0));
@@ -214,141 +203,8 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
-BOOL WINAPI CtrlHandler(DWORD dwCtrlType)
+void keyboard()
 {
-    if (hook)
-    {
-        UnhookWindowsHookEx(hook);
-        hook = NULL;
-    }
-    return TRUE;
-}
-
-void setupHook()
-{
-    SetConsoleCtrlHandler(CtrlHandler, TRUE);
-    hook = SetWindowsHookExW(WH_MOUSE_LL, MouseHook, nullptr, 0);
-    if (!hook)
-    {
-        exit(EXIT_FAILURE);
-    }
-    GetMessageW(nullptr, nullptr, 0, 0);
-
-}
-
-void integrityCheck()
-{
-    HWND clientWindow = FindWindow(NULL, "e11240f4fe281c9eee3c015550f4bb97103270f9d12a7dcdf2c740b795e2cab8");
-    if (clientWindow == NULL)
-    {
-        MessageBox(NULL, "Buy a subscription!", "Don't be GAY!", MB_OK | MB_ICONQUESTION);
-        system("start https://holyness.sellix.io");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void findGameWindowToHook()
-{
-    if (hGameWindow != NULL)
-    {
-        std::cout << "League of Legends found successfully!" << std::endl;
-    }
-    else
-    {
-        std::cout << "Unable to find League of Legends, Please open League of Legends!" << std::endl;
-        Sleep(3000);
-        exit(EXIT_FAILURE);
-    }
-}
-
-void checkProcessHandle()
-{
-    processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
-    if (processHandle == INVALID_HANDLE_VALUE || processHandle == NULL)
-    {
-        std::cout << "Try to run the application as administrator." << std::endl;
-        Sleep(3000);
-        exit(EXIT_FAILURE);
-    }
-}
-
-void checkGameToExit()
-{
-    HWND hGameWindowToExit = FindWindow(NULL, "League of Legends (TM) Client");
-    if (hGameWindowToExit == NULL)
-    {
-        exit(EXIT_FAILURE);
-    }
-}
-
-void antiTamp()
-{
-    while(true)
-    {
-        Sleep(10);
-        killProcessByName("consent.exe");
-    }
-
-}
-
-void callPoly()
-{
-    while (true)
-    {
-        polymorphic();
-        Sleep(100);
-    }
-
-}
-
-void callTitle()
-{
-    while (true)
-    {
-        SetConsoleTitleA(titleGen(rand() % 300 + 300).c_str());
-        Sleep(100);
-    }
-
-}
-
-void iniPRT()
-{
-    DWORD offsetGameToBaseAdress = -0x000000C4;
-    std::array<DWORD, 8> camZOffsets{ 0x0, 0x8, 0xC, 0xB0, 0x20, 0x0, 0x4, 0x25C };
-    DWORD baseAddress = NULL;
-
-    //camZAddress - 236bytes = camYAddress - 8bytes = camXAddress
-    DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
-    ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
-    DWORD camZAddress = baseAddress;
-    for (int i = 0; i < camZOffsets.size() - 1; i++)
-    {
-        ReadProcessMemory(processHandle, (LPVOID)(camZAddress + camZOffsets.at(i)), &camZAddress, sizeof(camZAddress), NULL);
-    }
-    camZAddress += camZOffsets.at(camZOffsets.size() - 1);
-    camZAddressCPY = camZAddress;
-}
-
-int main()
-{
-    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)antiTamp, NULL, 0, NULL);
-    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)callPoly, NULL, 0, NULL);
-    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)callTitle, NULL, 0, NULL);
-
-    integrityCheck();
-   
-    findGameWindowToHook();
-
-    GetWindowThreadProcessId(hGameWindow, &pID);
-
-    checkProcessHandle();
-
-    iniPRT();
-
-    //mouse
-    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)setupHook, NULL, 0, NULL);
-
-
     while (true)
     {
         Sleep(10);
@@ -359,12 +215,6 @@ int main()
             leftNright = leftNrightReset;
             WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY - 236), &upNdownReset, sizeof(float), 0);
             upNdown = upNdownReset;
-        }
-
-        if (GetAsyncKeyState(VK_NUMPAD6))
-        {
-            MessageBox(NULL, "The zoom unlocker will close when you press OK!", "You have pressed NUMPAD6 to kill the zoom unlocker!", MB_OK | MB_ICONQUESTION);
-            return 0;
         }
 
         if (GetAsyncKeyState(VK_ADD)) //numpad +
@@ -414,7 +264,157 @@ int main()
                 WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY - 236), &upNdown, sizeof(float), 0);
             }
         }
+    }
+}
 
+BOOL WINAPI CtrlHandler(DWORD dwCtrlType)
+{
+    if (hook)
+    {
+        UnhookWindowsHookEx(hook);
+        hook = NULL;
+    }
+    return TRUE;
+}
+
+void setupHook()
+{
+    SetConsoleCtrlHandler(CtrlHandler, TRUE);
+    hook = SetWindowsHookExW(WH_MOUSE_LL, MouseHook, nullptr, 0);
+    if (!hook)
+    {
+        exit(EXIT_FAILURE);
+    }
+    GetMessageW(nullptr, nullptr, 0, 0);
+}
+
+void integrityCheck()
+{
+    HWND clientWindow = FindWindow(NULL, "e11240f4fe281c9eee3c015550f4bb97103270f9d12a7dcdf2c740b795e2cab8");
+    if (clientWindow == NULL)
+    {
+        MessageBox(NULL, "Buy a subscription!", "Don't be GAY!", MB_OK | MB_ICONQUESTION);
+        system("start https://holyness.sellix.io");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void findGameWindowToHook()
+{
+    if (hGameWindow != NULL)
+    {
+        std::cout << "League of Legends found successfully!" << std::endl;
+    }
+    else
+    {
+        std::cout << "Unable to find League of Legends, Please make sure that you are in a game!" << std::endl;
+        Sleep(3000);
+        exit(EXIT_FAILURE);
+    }
+}
+
+void checkProcessHandle()
+{
+    processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
+    if (processHandle == INVALID_HANDLE_VALUE || processHandle == NULL)
+    {
+        std::cout << "Try to run the application as administrator." << std::endl;
+        Sleep(3000);
+        exit(EXIT_FAILURE);
+    }
+}
+
+void checkGameToExit()
+{
+    HWND hGameWindowToExit = FindWindow(NULL, "League of Legends (TM) Client");
+    if (hGameWindowToExit == NULL)
+    {
+        CloseHandle(processHandle);
+        exit(EXIT_FAILURE);
+    }
+}
+
+void antiTamp()
+{
+    while(true)
+    {
+        Sleep(10);
+        killProcessByName("consent.exe");
+    }
+
+}
+
+void callPoly()
+{
+    while (true)
+    {
+        polymorphic();
+        Sleep(100);
+    }
+
+}
+
+void callTitle()
+{
+    auto titleGen = [](int num)
+    {
+        std::srand(std::time(0));
+        std::string titleName;
+        for (int i = 0; i < num; i++)
+        {
+            titleName += rand() % 300 + 300;
+        }
+        return titleName;
+    };
+
+    while (true)
+    {
+        SetConsoleTitleA(titleGen(rand() % 300 + 300).c_str());
+        Sleep(100);
+    }
+}
+
+void iniPRT()
+{
+    DWORD offsetGameToBaseAdress = -0x000000C4;
+    std::array<DWORD, 8> camZOffsets{ 0x0, 0x8, 0xC, 0xB0, 0x20, 0x0, 0x4, 0x25C };
+    DWORD baseAddress = NULL;
+
+    //camZAddress - 236bytes = camYAddress - 8bytes = camXAddress
+    DWORD PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
+    ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
+    DWORD camZAddress = baseAddress;
+    for (int i = 0; i < camZOffsets.size() - 1; i++)
+    {
+        ReadProcessMemory(processHandle, (LPVOID)(camZAddress + camZOffsets.at(i)), &camZAddress, sizeof(camZAddress), NULL);
+    }
+    camZAddress += camZOffsets.at(camZOffsets.size() - 1);
+    camZAddressCPY = camZAddress;
+}
+
+int main()
+{
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)antiTamp, NULL, 0, NULL);//anti tamp thread
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)callPoly, NULL, 0, NULL);//call poly on a thread
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)callTitle, NULL, 0, NULL);// call title on a thread
+
+    integrityCheck();
+   
+    findGameWindowToHook();
+
+    GetWindowThreadProcessId(hGameWindow, &pID);
+
+    checkProcessHandle();
+
+    iniPRT();
+
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)setupHook, NULL, 0, NULL);//mouse thread
+
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)keyboard, NULL, 0, NULL);//keyboar thread
+
+    while(true)
+    {
+        Sleep(100);
         checkGameToExit();
     }
 }
