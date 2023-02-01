@@ -1,5 +1,0 @@
-﻿clang-cl : warning : argument unused during compilation: '/std:c++20' [-Wunused-command-line-argument]
-clang-cl : warning : argument unused during compilation: '/std:c++20' [-Wunused-command-line-argument]
-main.cpp(422,28): warning : cast between incompatible calling conventions 'cdecl' and 'stdcall'; calls through this pointer may abort at runtime [-Wcast-calling-convention]
-main.cpp(285,6): message : consider defining 'setupHook' with the 'stdcall' calling convention
-  zoomNcam unlocker by Vili.vcxproj -> C:\Users\Vili\Desktop\src\Release\zoom.exe
