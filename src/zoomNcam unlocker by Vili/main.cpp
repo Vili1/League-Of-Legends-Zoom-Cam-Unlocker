@@ -260,7 +260,7 @@ void callTitle()
 void iniPRT()
 {
     char moduleName[] = "stub.dll";
-    uintptr_t offsetGameToBaseAddress = 0x00B35950;
+    uintptr_t offsetGameToBaseAddress = 0x00B1C950;
     std::array<uintptr_t, 8> camZOffsets{ 0x40, 0x10, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0};
     uintptr_t baseAddress = NULL;
     uintptr_t gameBaseAddress = dwGetModuleBaseAddress(_T(moduleName), pID);
