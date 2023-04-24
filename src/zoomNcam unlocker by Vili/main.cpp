@@ -1,9 +1,16 @@
 #include <Windows.h>
 #include <TlHelp32.h>
+#include <Psapi.h>
 #include <iostream>
-#include <tchar.h> 
+#include <vector>
 #include <array>
-#include <thread>
+#include <ctime>
+#include <string>
+#include <sstream>
+#include "ntinfo.h"
+#include <winbase.h>
+#include <string.h>
+#include <process.h>
 
 #define SCROLLUP 1
 #define SCROLLDOWN 2
@@ -45,27 +52,72 @@ void killProcessByName(const char* filename)
     CloseHandle(hSnapShot);
 }
 
-uintptr_t dwGetModuleBaseAddress(TCHAR* lpszModuleName, uintptr_t pID)
+std::vector<uintptr_t> threadList(uintptr_t pid)
 {
-    uintptr_t dwModuleBaseAddress = 0;
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pID);
-    MODULEENTRY32 ModuleEntry32 = { 0 };
-    ModuleEntry32.dwSize = sizeof(MODULEENTRY32);
-
-    if (Module32First(hSnapshot, &ModuleEntry32))
+    std::vector<uintptr_t> vect = std::vector<uintptr_t>();
+    HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    if (h == INVALID_HANDLE_VALUE)
+    return vect;
+    THREADENTRY32 te;
+    te.dwSize = sizeof(te);
+    if (Thread32First(h, &te))
     {
         do
         {
-            if (_tcscmp(ModuleEntry32.szModule, lpszModuleName) == 0)
+            if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) + sizeof(te.th32OwnerProcessID))
             {
-                dwModuleBaseAddress = (uintptr_t)ModuleEntry32.modBaseAddr;
-                break;
+                if (te.th32OwnerProcessID == pid)
+                {
+                    vect.push_back(te.th32ThreadID);
+                }
             }
-        } while (Module32Next(hSnapshot, &ModuleEntry32));
-
+            te.dwSize = sizeof(te);
+        }
+        while (Thread32Next(h, &te));
     }
-    CloseHandle(hSnapshot);
-    return dwModuleBaseAddress;
+    return vect;
+}
+
+uintptr_t GetThreadStartAddress(HANDLE processHandle, HANDLE hThread)
+{
+    uintptr_t stacktop = 0, result = 0;
+    MODULEINFO mi;
+    GetModuleInformation(processHandle, GetModuleHandle("kernel32.dll"), &mi, sizeof(mi));
+    stacktop = (uintptr_t)GetThreadStackTopAddress_x86(processHandle, hThread);
+    CloseHandle(hThread);
+    if (stacktop) {
+
+        uintptr_t* buf32 = new uintptr_t[8192];
+
+        if (ReadProcessMemory(processHandle, (LPCVOID)(stacktop - 8192), buf32, 8192, NULL))
+        {
+            for (int i = 8192 / 8 - 1; i >= 0; --i)
+            {
+                if (buf32[i] >= (uintptr_t)mi.lpBaseOfDll && buf32[i] <= (uintptr_t)mi.lpBaseOfDll + mi.SizeOfImage)
+                {
+                    result = stacktop - 8192 + i * 8;
+                    break;
+                }
+            }
+        }
+
+        delete[] buf32;
+    }
+    return result;
+}
+
+uintptr_t GetThreadstackStartAddress(int stackNumber, uintptr_t pID, HANDLE processHandle)
+{
+    std::vector<uintptr_t> threadId = threadList(pID);
+    int stackNum = 0;
+    for (auto it = threadId.begin(); it != threadId.end(); ++it)
+    {
+        HANDLE threadHandle = OpenThread(THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, *it);
+        uintptr_t threadStartAddress = GetThreadStartAddress(processHandle, threadHandle);
+        if (stackNum == stackNumber) return threadStartAddress;
+        stackNum++;
+    }
+    return 0;
 }
 
 LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
@@ -187,7 +239,7 @@ void integrityCheck()
     if (clientWindow == NULL)
     {
         MessageBox(NULL, "Buy a subscription!", "Don't be GAY!", MB_OK | MB_ICONQUESTION);
-        system("start https://holyness.mysellix.io");
+        system("start https://holyness.mysellix.io/");
         exit(EXIT_FAILURE);
     }
 }
@@ -237,6 +289,7 @@ void antiTamp()
 
 }
 
+
 void callTitle()
 {
     auto titleGen = [](int num)
@@ -259,13 +312,12 @@ void callTitle()
 
 void iniPRT()
 {
-    char moduleName[] = "stub.dll";
-    uintptr_t offsetGameToBaseAddress = 0x00B1C950;
-    std::array<uintptr_t, 8> camZOffsets{ 0x40, 0x10, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0};
+    uintptr_t offsetGameToBaseAdress = -0x00000280;
+    std::array<uintptr_t, 7> camZOffsets{ 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 };
     uintptr_t baseAddress = NULL;
-    uintptr_t gameBaseAddress = dwGetModuleBaseAddress(_T(moduleName), pID);
-    ReadProcessMemory(processHandle, (LPVOID)(gameBaseAddress + offsetGameToBaseAddress), &baseAddress, sizeof(baseAddress), NULL);
-    
+
+    uintptr_t PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
+    ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
     uintptr_t camZAddress = baseAddress;
     for (int i = 0; i < camZOffsets.size() - 1; i++)
     {
@@ -273,17 +325,15 @@ void iniPRT()
     }
     camZAddress += camZOffsets.at(camZOffsets.size() - 1);
     camZAddressCPY = camZAddress;
-
 }
 
 int main()
 {
     CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)antiTamp, NULL, 0, NULL);//anti tamp thread
-    //CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)callPoly, NULL, 0, NULL);//call poly on a thread
     CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)callTitle, NULL, 0, NULL);// call title on a thread
 
     integrityCheck();
-
+   
     findGameWindowToHook();
 
     GetWindowThreadProcessId(hGameWindow, &pID);
@@ -298,7 +348,7 @@ int main()
 
     while(true)
     {
-        Sleep(1000);
+        Sleep(100);
         checkGameToExit();
     }
 }
