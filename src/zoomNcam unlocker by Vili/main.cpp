@@ -3,7 +3,6 @@
 #include <Psapi.h>
 #include <iostream>
 #include <vector>
-#include <array>
 #include <ctime>
 #include <string>
 #include <sstream>
@@ -11,9 +10,6 @@
 #include <winbase.h>
 #include <string.h>
 #include <process.h>
-
-#define SCROLLUP 1
-#define SCROLLDOWN 2
 
 //global vars
 float zoomValue = 1.281169772;
@@ -30,27 +26,16 @@ uintptr_t camZAddress = NULL;
 DWORD pID = NULL;
 HANDLE processHandle = NULL;
 
-void killProcessByName(const char* filename)
+auto titleGen = [](int num)
 {
-    HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, NULL);
-    PROCESSENTRY32 pEntry;
-    pEntry.dwSize = sizeof(pEntry);
-    BOOL hRes = Process32First(hSnapShot, &pEntry);
-    while (hRes)
+    std::srand(std::time(0));
+    std::string titleName;
+    for (int i = 0; i < num; i++)
     {
-        if (strcmp(pEntry.szExeFile, filename) == 0)
-        {
-            HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, 0, (uintptr_t)pEntry.th32ProcessID);
-            if (hProcess != NULL)
-            {
-                TerminateProcess(hProcess, 9);
-                CloseHandle(hProcess);
-            }
-        }
-        hRes = Process32Next(hSnapShot, &pEntry);
+        titleName += rand() % 300 + 300;
     }
-    CloseHandle(hSnapShot);
-}
+    return titleName;
+};
 
 std::vector<uintptr_t> threadList(uintptr_t pid)
 {
@@ -148,6 +133,28 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
+
+BOOL WINAPI CtrlHandler(DWORD dwCtrlType)
+{
+    if (hook)
+    {
+        UnhookWindowsHookEx(hook);
+        hook = NULL;
+    }
+    return TRUE;
+}
+
+void setupHook()
+{
+    SetConsoleCtrlHandler(CtrlHandler, TRUE);
+    hook = SetWindowsHookExW(WH_MOUSE_LL, MouseHook, nullptr, 0);
+    if (!hook)
+    {
+        exit(EXIT_FAILURE);
+    }
+    GetMessageW(nullptr, nullptr, 0, 0);
+}
+
 void keyboard()
 {
     while (true)
@@ -212,27 +219,6 @@ void keyboard()
     }
 }
 
-BOOL WINAPI CtrlHandler(DWORD dwCtrlType)
-{
-    if (hook)
-    {
-        UnhookWindowsHookEx(hook);
-        hook = NULL;
-    }
-    return TRUE;
-}
-
-void setupHook()
-{
-    SetConsoleCtrlHandler(CtrlHandler, TRUE);
-    hook = SetWindowsHookExW(WH_MOUSE_LL, MouseHook, nullptr, 0);
-    if (!hook)
-    {
-        exit(EXIT_FAILURE);
-    }
-    GetMessageW(nullptr, nullptr, 0, 0);
-}
-
 void integrityCheck()
 {
     HWND clientWindow = FindWindow(NULL, "e11240f4fe281c9eee3c015550f4bb97103270f9d12a7dcdf2c740b795e2cab8");
@@ -249,6 +235,14 @@ void findGameWindowToHook()
     if (hGameWindow != NULL)
     {
         std::cout << "League of Legends found successfully!" << std::endl;
+        GetWindowThreadProcessId(hGameWindow, &pID);
+        processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
+        if (processHandle == INVALID_HANDLE_VALUE || processHandle == NULL)
+        {
+            std::cout << "Try to run the application as administrator." << std::endl;
+            Sleep(3000);
+            exit(EXIT_FAILURE);
+        }
     }
     else
     {
@@ -258,64 +252,10 @@ void findGameWindowToHook()
     }
 }
 
-void checkProcessHandle()
+
+uintptr_t iniPRT(uintptr_t offsetGameToBaseAdress, std::vector<uintptr_t> AddrOffsets)
 {
-    processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
-    if (processHandle == INVALID_HANDLE_VALUE || processHandle == NULL)
-    {
-        std::cout << "Try to run the application as administrator." << std::endl;
-        Sleep(3000);
-        exit(EXIT_FAILURE);
-    }
-}
-
-void checkGameToExit()
-{
-    HWND hGameWindowToExit = FindWindow(NULL, "League of Legends (TM) Client");
-    if (hGameWindowToExit == NULL)
-    {
-        CloseHandle(processHandle);
-        exit(EXIT_FAILURE);
-    }
-}
-
-void antiTamp()
-{
-    while(true)
-    {
-        Sleep(10);
-        killProcessByName("consent.exe");
-    }
-
-}
-
-
-void callTitle()
-{
-    auto titleGen = [](int num)
-    {
-        std::srand(std::time(0));
-        std::string titleName;
-        for (int i = 0; i < num; i++)
-        {
-            titleName += rand() % 300 + 300;
-        }
-        return titleName;
-    };
-
-    while (true)
-    {
-        SetConsoleTitleA(titleGen(rand() % 300 + 300).c_str());
-        Sleep(100);
-    }
-}
-
-uintptr_t iniPRT()
-{
-    uintptr_t offsetGameToBaseAdress = -0x00000280;
-    std::array<uintptr_t, 7> AddrOffsets{ 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 };
     uintptr_t baseAddress = NULL;
-
     uintptr_t PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
     ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
     uintptr_t Address = baseAddress;
@@ -329,18 +269,13 @@ uintptr_t iniPRT()
 
 int main()
 {
-    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)antiTamp, NULL, 0, NULL);//anti tamp thread
-    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)callTitle, NULL, 0, NULL);// call title on a thread
+    SetConsoleTitleA(titleGen(rand() % 300 + 300).c_str());
 
     integrityCheck();
    
     findGameWindowToHook();
 
-    GetWindowThreadProcessId(hGameWindow, &pID);
-
-    checkProcessHandle();
-
-    camZAddress = iniPRT();
+    camZAddress = iniPRT(-0x00000280, { 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 });
 
     CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)setupHook, NULL, 0, NULL);//mouse thread
 
@@ -348,7 +283,12 @@ int main()
 
     while(true)
     {
-        Sleep(100);
-        checkGameToExit();
+        Sleep(1000);
+        HWND hGameWindowToExit = FindWindow(NULL, "League of Legends (TM) Client");
+        if (hGameWindowToExit == NULL)
+        {
+            CloseHandle(processHandle);
+            return 0;
+        }
     }
 }
