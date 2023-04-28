@@ -26,7 +26,7 @@ const float zoomSpeed = 0.05;
 int scroll = 0;
 HWND hGameWindow = FindWindow(NULL, "League of Legends (TM) Client");
 HHOOK hook = NULL;
-uintptr_t camZAddressCPY;
+uintptr_t camZAddress = NULL;
 DWORD pID = NULL;
 HANDLE processHandle = NULL;
 
@@ -133,7 +133,7 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
             if (zoomValue > 0.78)
             {
                 zoomValue -= zoomSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY), &zoomValue, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
             }
         }
         else
@@ -141,7 +141,7 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
             if (zoomValue < 2.7)
             {
                 zoomValue += zoomSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY), &zoomValue, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
             }
         }
     }
@@ -156,9 +156,9 @@ void keyboard()
 
         if (GetAsyncKeyState(VK_NUMPAD0)) //reset
         {
-            WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY - 264), &leftNrightReset, sizeof(float), 0);
+            WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNrightReset, sizeof(float), 0);
             leftNright = leftNrightReset;
-            WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY - 268), &upNdownReset, sizeof(float), 0);
+            WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 268), &upNdownReset, sizeof(float), 0);
             upNdown = upNdownReset;
         }
 
@@ -167,7 +167,7 @@ void keyboard()
             if (zoomValue > 0.78)
             {
                 zoomValue -= zoomSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY), &zoomValue, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
             }
         }
 
@@ -176,20 +176,20 @@ void keyboard()
             if (zoomValue < 2.7)
             {
                 zoomValue += zoomSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY), &zoomValue, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
             }
         }
 
         if (GetAsyncKeyState(VK_LEFT)) // LEFT ARROW
         {
             leftNright -= rotationSpeed;
-            WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY - 264), &leftNright, sizeof(float), 0);
+            WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNright, sizeof(float), 0);
         }
 
         if (GetAsyncKeyState(VK_RIGHT)) // RIGHT ARROW
         {
             leftNright += rotationSpeed;
-            WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY - 264), &leftNright, sizeof(float), 0);
+            WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNright, sizeof(float), 0);
         }
 
         if (GetAsyncKeyState(VK_UP)) // UP ARROW
@@ -197,7 +197,7 @@ void keyboard()
             if (upNdown < 89)
             {
                 upNdown += rotationSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY - 268), &upNdown, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 268), &upNdown, sizeof(float), 0);
             }
         }
 
@@ -206,7 +206,7 @@ void keyboard()
             if (upNdown > 17.5)
             {
                 upNdown -= rotationSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(camZAddressCPY - 268), &upNdown, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 268), &upNdown, sizeof(float), 0);
             }
         }
     }
@@ -310,21 +310,21 @@ void callTitle()
     }
 }
 
-void iniPRT()
+uintptr_t iniPRT()
 {
     uintptr_t offsetGameToBaseAdress = -0x00000280;
-    std::array<uintptr_t, 7> camZOffsets{ 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 };
+    std::array<uintptr_t, 7> AddrOffsets{ 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 };
     uintptr_t baseAddress = NULL;
 
     uintptr_t PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
     ReadProcessMemory(processHandle, (LPVOID)(PointerBaseAddress + offsetGameToBaseAdress), &baseAddress, sizeof(baseAddress), NULL);
-    uintptr_t camZAddress = baseAddress;
-    for (int i = 0; i < camZOffsets.size() - 1; i++)
+    uintptr_t Address = baseAddress;
+    for (int i = 0; i < AddrOffsets.size() - 1; i++)
     {
-        ReadProcessMemory(processHandle, (LPVOID)(camZAddress + camZOffsets.at(i)), &camZAddress, sizeof(camZAddress), NULL);
+        ReadProcessMemory(processHandle, (LPVOID)(Address + AddrOffsets.at(i)), &Address, sizeof(Address), NULL);
     }
-    camZAddress += camZOffsets.at(camZOffsets.size() - 1);
-    camZAddressCPY = camZAddress;
+    Address += AddrOffsets.at(AddrOffsets.size() - 1);
+    return Address;
 }
 
 int main()
@@ -340,7 +340,7 @@ int main()
 
     checkProcessHandle();
 
-    iniPRT();
+    camZAddress = iniPRT();
 
     CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)setupHook, NULL, 0, NULL);//mouse thread
 
