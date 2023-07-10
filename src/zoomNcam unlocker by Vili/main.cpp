@@ -18,6 +18,7 @@ float upNdown = 56;
 const float leftNrightReset = 180;
 const float upNdownReset = 56;
 const float rotationSpeed = 5.5;
+const float Msensitivity = 1.5;
 const float zoomSpeed = 0.05;
 int scroll = 0;
 HWND hGameWindow = FindWindow(NULL, "League of Legends (TM) Client");
@@ -25,6 +26,9 @@ HHOOK hook = NULL;
 uintptr_t camZAddress = NULL;
 DWORD pID = NULL;
 HANDLE processHandle = NULL;
+//get screen res
+int x = GetSystemMetrics(SM_CXSCREEN);
+int y = GetSystemMetrics(SM_CYSCREEN);
 
 auto titleGen = [](int num)
 {
@@ -155,6 +159,70 @@ void setupHook()
     GetMessageW(nullptr, nullptr, 0, 0);
 }
 
+void mouseLock()
+{
+    while (true)
+    {
+        Sleep(10);
+
+        if (GetAsyncKeyState(VK_MBUTTON)) //lock mouse
+        {
+            if (GetForegroundWindow() == FindWindow(NULL, "League of Legends (TM) Client"))
+            {
+                SetCursorPos(x / 2, y / 2);
+                Sleep(5);
+            }
+        }
+    }
+}
+
+void mouseLR()
+{
+    POINT p;
+    while (true)
+    {
+        Sleep(5);
+
+        if (GetAsyncKeyState(VK_MBUTTON)) //lock mouse
+        {
+            if (GetCursorPos(&p))
+            {
+                if (p.x < x / 2)
+                {
+                    leftNright += Msensitivity;
+                    WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNright, sizeof(float), 0);
+                }
+
+                if (p.x > x / 2)
+                {
+                    leftNright -= Msensitivity;
+                    WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNright, sizeof(float), 0);
+                }
+
+                if (p.y < y / 2)
+                {
+                    if (upNdown < 89)
+                    {
+                        upNdown += Msensitivity;
+                        WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 268), &upNdown, sizeof(float), 0);
+                    }
+                }
+
+                if (p.y > y / 2)
+                {
+                    if (upNdown > 17.5)
+                    {
+                        upNdown -= Msensitivity;
+                        WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 268), &upNdown, sizeof(float), 0);
+                    }
+                }
+
+            }
+        }
+
+    }
+}
+
 void keyboard()
 {
     while (true)
@@ -189,13 +257,13 @@ void keyboard()
 
         if (GetAsyncKeyState(VK_LEFT)) // LEFT ARROW
         {
-            leftNright -= rotationSpeed;
+            leftNright += rotationSpeed;
             WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNright, sizeof(float), 0);
         }
 
         if (GetAsyncKeyState(VK_RIGHT)) // RIGHT ARROW
         {
-            leftNright += rotationSpeed;
+            leftNright -= rotationSpeed;
             WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNright, sizeof(float), 0);
         }
 
@@ -252,7 +320,6 @@ void findGameWindowToHook()
     }
 }
 
-
 uintptr_t iniPRT(uintptr_t offsetGameToBaseAdress, std::vector<uintptr_t> AddrOffsets)
 {
     uintptr_t baseAddress = NULL;
@@ -277,7 +344,11 @@ int main()
 
     camZAddress = iniPRT(-0x000002B0, { 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 });
 
-    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)setupHook, NULL, 0, NULL);//mouse thread
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)setupHook, NULL, 0, NULL);//mouse scroll thread
+
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)mouseLock, NULL, 0, NULL);//mouseLock thread
+
+    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)mouseLR, NULL, 0, NULL);//mouseLR thread
 
     CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)keyboard, NULL, 0, NULL);//keyboar thread
 
