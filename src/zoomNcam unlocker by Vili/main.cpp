@@ -178,7 +178,8 @@ void mouseLock()
 
 void mouseLR()
 {
-    POINT p;
+    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)mouseLock, 0, 0, 0);//mouseLock thread
+    POINT p; //for cursor pos
     while (true)
     {
         Sleep(5);
@@ -344,13 +345,11 @@ int main()
 
     camZAddress = iniPRT(-0x000002B0, { 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 });
 
-    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)setupHook, NULL, 0, NULL);//mouse scroll thread
+    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)setupHook, 0, 0, 0);//mouse scroll thread
 
-    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)mouseLock, NULL, 0, NULL);//mouseLock thread
+    CreateThread(0, 00, (LPTHREAD_START_ROUTINE)mouseLR, 0, 0, 0);//mouseLR thread
 
-    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)mouseLR, NULL, 0, NULL);//mouseLR thread
-
-    CreateThread(NULL, 20, (LPTHREAD_START_ROUTINE)keyboard, NULL, 0, NULL);//keyboar thread
+    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)keyboard, 0, 0, 0);//keyboar thread
 
     while(true)
     {
