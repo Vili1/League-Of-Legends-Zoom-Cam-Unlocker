@@ -347,7 +347,7 @@ int main()
 
     CreateThread(0, 0, (LPTHREAD_START_ROUTINE)setupHook, 0, 0, 0);//mouse scroll thread
 
-    CreateThread(0, 00, (LPTHREAD_START_ROUTINE)mouseLR, 0, 0, 0);//mouseLR thread
+    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)mouseLR, 0, 0, 0);//mouseLR thread
 
     CreateThread(0, 0, (LPTHREAD_START_ROUTINE)keyboard, 0, 0, 0);//keyboar thread
 
