@@ -343,7 +343,7 @@ int main()
    
     findGameWindowToHook();
 
-    camZAddress = iniPRT(-0x000002B0, { 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 });
+    camZAddress = iniPRT(-0x00000298, { 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 });
 
     CreateThread(0, 0, (LPTHREAD_START_ROUTINE)setupHook, 0, 0, 0);//mouse scroll thread
 
