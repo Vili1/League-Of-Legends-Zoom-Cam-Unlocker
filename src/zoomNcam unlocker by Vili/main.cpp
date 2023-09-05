@@ -113,24 +113,12 @@ uintptr_t GetThreadstackStartAddress(int stackNumber, uintptr_t pID, HANDLE proc
     return 0;
 }
 
-BOOL WindowFocus(char Wname[])
-{
-    if (GetForegroundWindow() == FindWindow(NULL, Wname))
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
 LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
     if (nCode != HC_ACTION)
         return CallNextHookEx(NULL, nCode, wParam, lParam);
     MSLLHOOKSTRUCT* info = reinterpret_cast<MSLLHOOKSTRUCT*>(lParam);
-    if (!WindowFocus(WindowName))
+    if (GetForegroundWindow() != FindWindow(NULL, WindowName))
     {
         return CallNextHookEx(NULL, nCode, wParam, lParam);
     }
@@ -184,7 +172,7 @@ void mouseLock()
     {
         Sleep(10);
 
-        if (WindowFocus(WindowName))
+        if (GetForegroundWindow() == FindWindow(NULL, WindowName))
         {
             if (GetAsyncKeyState(VK_MBUTTON)) //lock mouse
             {
@@ -206,7 +194,7 @@ void mouseLR()
     while (true)
     {
         Sleep(5);
-        if (WindowFocus(WindowName))
+        if (GetForegroundWindow() == FindWindow(NULL, WindowName))
         {
             if (GetAsyncKeyState(VK_MBUTTON)) //lock mouse
             {
@@ -259,7 +247,7 @@ void keyboard()
     {
         Sleep(10);
 
-        if (WindowFocus(WindowName))
+        if (GetForegroundWindow() == FindWindow(NULL, WindowName))
         {
             if (GetAsyncKeyState(VK_NUMPAD0)) //reset
             {
