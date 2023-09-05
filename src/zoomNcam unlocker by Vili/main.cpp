@@ -13,17 +13,21 @@
 
 //global vars
 float zoomValue = 1.281169772;
-float leftNright = 180;
-float upNdown = 56;
+float leftNrightValue = 180;
+float upNdownValue = 56;
 const float leftNrightReset = 180;
 const float upNdownReset = 56;
 const float rotationSpeed = 5.5;
 const float Msensitivity = 1.5;
 const float zoomSpeed = 0.05;
 int scroll = 0;
-HWND hGameWindow = FindWindow(NULL, "League of Legends (TM) Client");
+char WindowName[30] = "League of Legends (TM) Client";
+BOOL WindowinFocus = false;
+HWND hGameWindow = FindWindow(NULL, WindowName);
 HHOOK hook = NULL;
 uintptr_t camZAddress = NULL;
+uintptr_t leftNrightAdderss = NULL;
+uintptr_t upNdownAddress = NULL;
 DWORD pID = NULL;
 HANDLE processHandle = NULL;
 //get screen res
@@ -109,12 +113,27 @@ uintptr_t GetThreadstackStartAddress(int stackNumber, uintptr_t pID, HANDLE proc
     return 0;
 }
 
+BOOL WindowFocus(char Wname[])
+{
+    if (GetForegroundWindow() == FindWindow(NULL, Wname))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
     if (nCode != HC_ACTION)
         return CallNextHookEx(NULL, nCode, wParam, lParam);
     MSLLHOOKSTRUCT* info = reinterpret_cast<MSLLHOOKSTRUCT*>(lParam);
-
+    if (!WindowFocus(WindowName))
+    {
+        return CallNextHookEx(NULL, nCode, wParam, lParam);
+    }
     if (wParam == WM_MOUSEWHEEL)
     {
         if (info->mouseData == 0x780000)
@@ -165,13 +184,17 @@ void mouseLock()
     {
         Sleep(10);
 
-        if (GetAsyncKeyState(VK_MBUTTON)) //lock mouse
+        if (WindowFocus(WindowName))
         {
-            if (GetForegroundWindow() == FindWindow(NULL, "League of Legends (TM) Client"))
+            if (GetAsyncKeyState(VK_MBUTTON)) //lock mouse
             {
                 SetCursorPos(x / 2, y / 2);
                 Sleep(5);
             }
+        }
+        else
+        {
+            Sleep(500);
         }
     }
 }
@@ -183,44 +206,50 @@ void mouseLR()
     while (true)
     {
         Sleep(5);
-
-        if (GetAsyncKeyState(VK_MBUTTON)) //lock mouse
+        if (WindowFocus(WindowName))
         {
-            if (GetCursorPos(&p))
+            if (GetAsyncKeyState(VK_MBUTTON)) //lock mouse
             {
-                if (p.x < x / 2)
+                if (GetCursorPos(&p))
                 {
-                    leftNright += Msensitivity;
-                    WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNright, sizeof(float), 0);
-                }
-
-                if (p.x > x / 2)
-                {
-                    leftNright -= Msensitivity;
-                    WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNright, sizeof(float), 0);
-                }
-
-                if (p.y < y / 2)
-                {
-                    if (upNdown < 89)
+                    if (p.x < x / 2)
                     {
-                        upNdown += Msensitivity;
-                        WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 268), &upNdown, sizeof(float), 0);
+                        leftNrightValue += Msensitivity;
+                        WriteProcessMemory(processHandle, (LPVOID)(leftNrightAdderss), &leftNrightValue, sizeof(float), 0);
                     }
-                }
 
-                if (p.y > y / 2)
-                {
-                    if (upNdown > 17.5)
+                    if (p.x > x / 2)
                     {
-                        upNdown -= Msensitivity;
-                        WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 268), &upNdown, sizeof(float), 0);
+                        leftNrightValue -= Msensitivity;
+                        WriteProcessMemory(processHandle, (LPVOID)(leftNrightAdderss), &leftNrightValue, sizeof(float), 0);
                     }
-                }
 
+                    if (p.y < y / 2)
+                    {
+                        if (upNdownValue < 88)
+                        {
+                            upNdownValue += Msensitivity;
+                            WriteProcessMemory(processHandle, (LPVOID)(upNdownAddress), &upNdownValue, sizeof(float), 0);
+                        }
+                    }
+
+                    if (p.y > y / 2)
+                    {
+                        if (upNdownValue > 17.5)
+                        {
+                            upNdownValue -= Msensitivity;
+                            WriteProcessMemory(processHandle, (LPVOID)(upNdownAddress), &upNdownValue, sizeof(float), 0);
+                        }
+                    }
+
+                }
             }
         }
-
+        else
+        {
+            Sleep(500);
+        }
+  
     }
 }
 
@@ -230,72 +259,69 @@ void keyboard()
     {
         Sleep(10);
 
-        if (GetAsyncKeyState(VK_NUMPAD0)) //reset
+        if (WindowFocus(WindowName))
         {
-            WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNrightReset, sizeof(float), 0);
-            leftNright = leftNrightReset;
-            WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 268), &upNdownReset, sizeof(float), 0);
-            upNdown = upNdownReset;
-        }
-
-        if (GetAsyncKeyState(VK_ADD)) //numpad +
-        {
-            if (zoomValue > 0.78)
+            if (GetAsyncKeyState(VK_NUMPAD0)) //reset
             {
-                zoomValue -= zoomSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
+                WriteProcessMemory(processHandle, (LPVOID)(leftNrightAdderss), &leftNrightReset, sizeof(float), 0);
+                leftNrightValue = leftNrightReset;
+                WriteProcessMemory(processHandle, (LPVOID)(upNdownAddress), &upNdownReset, sizeof(float), 0);
+                upNdownValue = upNdownReset;
+            }
+
+            if (GetAsyncKeyState(VK_ADD)) //numpad +
+            {
+                if (zoomValue > 0.78)
+                {
+                    zoomValue -= zoomSpeed;
+                    WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
+                }
+            }
+
+            if (GetAsyncKeyState(VK_SUBTRACT)) // numpad -
+            {
+                if (zoomValue < 2.7)
+                {
+                    zoomValue += zoomSpeed;
+                    WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
+                }
+            }
+
+            if (GetAsyncKeyState(VK_LEFT)) // LEFT ARROW
+            {
+                leftNrightValue += rotationSpeed;
+                WriteProcessMemory(processHandle, (LPVOID)(leftNrightAdderss), &leftNrightValue, sizeof(float), 0);
+            }
+
+            if (GetAsyncKeyState(VK_RIGHT)) // RIGHT ARROW
+            {
+                leftNrightValue -= rotationSpeed;
+                WriteProcessMemory(processHandle, (LPVOID)(leftNrightAdderss), &leftNrightValue, sizeof(float), 0);
+            }
+
+            if (GetAsyncKeyState(VK_UP)) // UP ARROW
+            {
+                if (upNdownValue < 88)
+                {
+                    upNdownValue += rotationSpeed;
+                    WriteProcessMemory(processHandle, (LPVOID)(upNdownAddress), &upNdownValue, sizeof(float), 0);
+                }
+            }
+
+            if (GetAsyncKeyState(VK_DOWN)) // DOWN ARROW
+            {
+                if (upNdownValue > 17.5)
+                {
+                    upNdownValue -= rotationSpeed;
+                    WriteProcessMemory(processHandle, (LPVOID)(upNdownAddress), &upNdownValue, sizeof(float), 0);
+                }
             }
         }
-
-        if (GetAsyncKeyState(VK_SUBTRACT)) // numpad -
+        else
         {
-            if (zoomValue < 2.7)
-            {
-                zoomValue += zoomSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(camZAddress), &zoomValue, sizeof(float), 0);
-            }
+            Sleep(500);
         }
 
-        if (GetAsyncKeyState(VK_LEFT)) // LEFT ARROW
-        {
-            leftNright += rotationSpeed;
-            WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNright, sizeof(float), 0);
-        }
-
-        if (GetAsyncKeyState(VK_RIGHT)) // RIGHT ARROW
-        {
-            leftNright -= rotationSpeed;
-            WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 264), &leftNright, sizeof(float), 0);
-        }
-
-        if (GetAsyncKeyState(VK_UP)) // UP ARROW
-        {
-            if (upNdown < 89)
-            {
-                upNdown += rotationSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 268), &upNdown, sizeof(float), 0);
-            }
-        }
-
-        if (GetAsyncKeyState(VK_DOWN)) // DOWN ARROW
-        {
-            if (upNdown > 17.5)
-            {
-                upNdown -= rotationSpeed;
-                WriteProcessMemory(processHandle, (LPVOID)(camZAddress - 268), &upNdown, sizeof(float), 0);
-            }
-        }
-    }
-}
-
-void integrityCheck()
-{
-    HWND clientWindow = FindWindow(NULL, "e11240f4fe281c9eee3c015550f4bb97103270f9d12a7dcdf2c740b795e2cab8");
-    if (clientWindow == NULL)
-    {
-        MessageBox(NULL, "Buy a subscription!", "Don't be GAY!", MB_OK | MB_ICONQUESTION);
-        system("start https://holyness.mysellix.io/");
-        exit(EXIT_FAILURE);
     }
 }
 
@@ -339,11 +365,14 @@ int main()
 {
     SetConsoleTitleA(titleGen(rand() % 300 + 300).c_str());
 
-    integrityCheck();
-   
     findGameWindowToHook();
 
     camZAddress = iniPRT(-0x00000298, { 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 });
+    leftNrightAdderss = camZAddress - 264;
+    upNdownAddress = camZAddress - 268;
+    ReadProcessMemory(processHandle, (LPCVOID)(camZAddress), &zoomValue, sizeof(float), NULL);
+    ReadProcessMemory(processHandle, (LPCVOID)(leftNrightAdderss), &leftNrightValue, sizeof(float), NULL);
+    ReadProcessMemory(processHandle, (LPCVOID)(upNdownAddress), &upNdownValue, sizeof(float), NULL);
 
     CreateThread(0, 0, (LPTHREAD_START_ROUTINE)setupHook, 0, 0, 0);//mouse scroll thread
 
@@ -354,8 +383,7 @@ int main()
     while(true)
     {
         Sleep(1000);
-        HWND hGameWindowToExit = FindWindow(NULL, "League of Legends (TM) Client");
-        if (hGameWindowToExit == NULL)
+        if (FindWindow(NULL, WindowName) == NULL)
         {
             CloseHandle(processHandle);
             return 0;
