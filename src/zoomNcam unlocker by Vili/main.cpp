@@ -23,7 +23,6 @@ const float zoomSpeed = 0.05;
 int scroll = 0;
 char WindowName[30] = "League of Legends (TM) Client";
 BOOL WindowinFocus = false;
-HWND hGameWindow = FindWindow(NULL, WindowName);
 HHOOK hook = NULL;
 uintptr_t camZAddress = NULL;
 uintptr_t leftNrightAdderss = NULL;
@@ -313,28 +312,6 @@ void keyboard()
     }
 }
 
-void findGameWindowToHook()
-{
-    if (hGameWindow != NULL)
-    {
-        std::cout << "League of Legends found successfully!" << std::endl;
-        GetWindowThreadProcessId(hGameWindow, &pID);
-        processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
-        if (processHandle == INVALID_HANDLE_VALUE || processHandle == NULL)
-        {
-            std::cout << "Try to run the application as administrator." << std::endl;
-            Sleep(3000);
-            exit(EXIT_FAILURE);
-        }
-    }
-    else
-    {
-        std::cout << "Unable to find League of Legends, Please make sure that you are in a game!" << std::endl;
-        Sleep(3000);
-        exit(EXIT_FAILURE);
-    }
-}
-
 uintptr_t iniPRT(uintptr_t offsetGameToBaseAdress, std::vector<uintptr_t> AddrOffsets)
 {
     uintptr_t baseAddress = NULL;
@@ -349,18 +326,54 @@ uintptr_t iniPRT(uintptr_t offsetGameToBaseAdress, std::vector<uintptr_t> AddrOf
     return Address;
 }
 
+void init()
+{
+    while (true)
+    {
+        Sleep(500);
+
+        if (FindWindow(NULL, WindowName) != NULL)
+        {
+            system("cls");
+            std::cout << "Found!" << std::endl;
+            GetWindowThreadProcessId(FindWindow(NULL, WindowName), &pID);
+            processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
+            if (processHandle == INVALID_HANDLE_VALUE || processHandle == NULL)
+            {
+                std::cout << "Try to run the application as administrator." << std::endl;
+                Sleep(3000);
+                exit(EXIT_FAILURE);
+            }
+
+            Sleep(5000);
+            camZAddress = iniPRT(-0x00000298, { 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 });
+            leftNrightAdderss = camZAddress - 264;
+            upNdownAddress = camZAddress - 268;
+            ReadProcessMemory(processHandle, (LPCVOID)(camZAddress), &zoomValue, sizeof(float), NULL);
+            ReadProcessMemory(processHandle, (LPCVOID)(leftNrightAdderss), &leftNrightValue, sizeof(float), NULL);
+            ReadProcessMemory(processHandle, (LPCVOID)(upNdownAddress), &upNdownValue, sizeof(float), NULL);
+            while (true)
+            {
+                Sleep(1000);
+                if (FindWindow(NULL, WindowName) == NULL)
+                {
+                    CloseHandle(processHandle);
+                    break;
+                }
+                
+            }
+        }
+        else
+        {
+            system("cls");
+            std::cout << "Looking for League of Legends!" << std::endl;
+        }
+    }
+}
+
 int main()
 {
     SetConsoleTitleA(titleGen(rand() % 300 + 300).c_str());
-
-    findGameWindowToHook();
-
-    camZAddress = iniPRT(-0x00000298, { 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 });
-    leftNrightAdderss = camZAddress - 264;
-    upNdownAddress = camZAddress - 268;
-    ReadProcessMemory(processHandle, (LPCVOID)(camZAddress), &zoomValue, sizeof(float), NULL);
-    ReadProcessMemory(processHandle, (LPCVOID)(leftNrightAdderss), &leftNrightValue, sizeof(float), NULL);
-    ReadProcessMemory(processHandle, (LPCVOID)(upNdownAddress), &upNdownValue, sizeof(float), NULL);
 
     CreateThread(0, 0, (LPTHREAD_START_ROUTINE)setupHook, 0, 0, 0);//mouse scroll thread
 
@@ -368,13 +381,6 @@ int main()
 
     CreateThread(0, 0, (LPTHREAD_START_ROUTINE)keyboard, 0, 0, 0);//keyboar thread
 
-    while(true)
-    {
-        Sleep(1000);
-        if (FindWindow(NULL, WindowName) == NULL)
-        {
-            CloseHandle(processHandle);
-            return 0;
-        }
-    }
+    init();
+    
 }
