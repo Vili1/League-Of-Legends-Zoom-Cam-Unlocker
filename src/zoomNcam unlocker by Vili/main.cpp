@@ -4,13 +4,14 @@
 #include <iostream>
 #include <vector>
 #include <ctime>
-#include <string>
 #include <sstream>
+#include <fstream>
 #include "ntinfo.h"
 #include <winbase.h>
 #include <string.h>
 #include <process.h>
-
+#include <thread>
+#include <chrono>
 //global vars
 float zoomValue = 1.281169772;
 float leftNrightValue = 180;
@@ -21,7 +22,7 @@ const float rotationSpeed = 5.5;
 const float Msensitivity = 1.5;
 const float zoomSpeed = 0.05;
 int scroll = 0;
-char WindowName[30] = "League of Legends (TM) Client";
+const char WindowName[30] = "League of Legends (TM) Client";
 BOOL WindowinFocus = false;
 HHOOK hook = NULL;
 uintptr_t camZAddress = NULL;
@@ -32,6 +33,9 @@ HANDLE processHandle = NULL;
 //get screen res
 int x = GetSystemMetrics(SM_CXSCREEN);
 int y = GetSystemMetrics(SM_CYSCREEN);
+//file related
+std::ifstream offsetsFile("offsets.txt");
+std::vector<uintptr_t> offsets;
 
 auto titleGen = [](int num)
 {
@@ -78,9 +82,7 @@ uintptr_t GetThreadStartAddress(HANDLE processHandle, HANDLE hThread)
     stacktop = (uintptr_t)GetThreadStackTopAddress_x86(processHandle, hThread);
     CloseHandle(hThread);
     if (stacktop) {
-
         uintptr_t* buf32 = new uintptr_t[8192];
-
         if (ReadProcessMemory(processHandle, (LPCVOID)(stacktop - 8192), buf32, 8192, NULL))
         {
             for (int i = 8192 / 8 - 1; i >= 0; --i)
@@ -92,7 +94,6 @@ uintptr_t GetThreadStartAddress(HANDLE processHandle, HANDLE hThread)
                 }
             }
         }
-
         delete[] buf32;
     }
     return result;
@@ -114,11 +115,11 @@ uintptr_t GetThreadstackStartAddress(int stackNumber, uintptr_t pID, HANDLE proc
 
 LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
-    if (nCode != HC_ACTION)
+    if (nCode != HC_ACTION) {
         return CallNextHookEx(NULL, nCode, wParam, lParam);
+    }   
     MSLLHOOKSTRUCT* info = reinterpret_cast<MSLLHOOKSTRUCT*>(lParam);
-    if (GetForegroundWindow() != FindWindow(NULL, WindowName))
-    {
+    if (GetForegroundWindow() != FindWindow(NULL, WindowName)){
         return CallNextHookEx(NULL, nCode, wParam, lParam);
     }
     if (wParam == WM_MOUSEWHEEL)
@@ -142,7 +143,6 @@ LRESULT CALLBACK MouseHook(int nCode, WPARAM wParam, LPARAM lParam)
     }
     return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
-
 
 BOOL WINAPI CtrlHandler(DWORD dwCtrlType)
 {
@@ -169,26 +169,26 @@ void mouseLock()
 {
     while (true)
     {
-        Sleep(10);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         if (GetForegroundWindow() == FindWindow(NULL, WindowName))
         {
             if (GetAsyncKeyState(VK_MBUTTON)) //lock mouse
             {
                 SetCursorPos(x / 2, y / 2);
-                Sleep(5);
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
         }
         else
         {
-            Sleep(500);
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }
 }
 
 void mouseLR()
 {
-    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)mouseLock, 0, 0, 0);//mouseLock thread
+    std::thread(mouseLock).detach();
     POINT p; //for cursor pos
     while (true)
     {
@@ -228,13 +228,12 @@ void mouseLR()
                             WriteProcessMemory(processHandle, (LPVOID)(upNdownAddress), &upNdownValue, sizeof(float), 0);
                         }
                     }
-
                 }
             }
         }
         else
         {
-            Sleep(500);
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
   
     }
@@ -244,7 +243,7 @@ void keyboard()
 {
     while (true)
     {
-        Sleep(10);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         if (GetForegroundWindow() == FindWindow(NULL, WindowName))
         {
@@ -306,13 +305,13 @@ void keyboard()
         }
         else
         {
-            Sleep(500);
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
 
     }
 }
 
-uintptr_t iniPRT(uintptr_t offsetGameToBaseAdress, std::vector<uintptr_t> AddrOffsets)
+uintptr_t initPRT(uintptr_t offsetGameToBaseAdress, std::vector<uintptr_t> AddrOffsets)
 {
     uintptr_t baseAddress = NULL;
     uintptr_t PointerBaseAddress = GetThreadstackStartAddress(0, pID, processHandle);
@@ -326,11 +325,46 @@ uintptr_t iniPRT(uintptr_t offsetGameToBaseAdress, std::vector<uintptr_t> AddrOf
     return Address;
 }
 
-void init()
+void readFile()
 {
+    if (offsetsFile.is_open())
+    {
+        std::string line;
+        while (std::getline(offsetsFile, line))
+        {
+            std::istringstream iss(line);
+            uintptr_t offset;
+            while (iss >> std::hex >> offset)
+            {
+                offsets.push_back(offset);
+            }
+        }
+        offsetsFile.close();
+    }
+    else
+    {
+        std::cout << "Unable to open offsets.txt" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+        exit(EXIT_FAILURE);
+    }
+
+    if (offsets.size() < 1)
+    {
+        std::cout << "Offsets file is empty or missing the base address offset." << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+        exit(EXIT_FAILURE);
+    }
+}
+
+void findGame()
+{
+    readFile();
+    uintptr_t offsetGameToBaseAddress = offsets[0];
+    offsets.erase(offsets.begin());//remove the base address offset from the vector
+
     while (true)
     {
-        Sleep(500);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
         if (FindWindow(NULL, WindowName) != NULL)
         {
@@ -341,17 +375,18 @@ void init()
             if (processHandle == INVALID_HANDLE_VALUE || processHandle == NULL)
             {
                 std::cout << "Try to run the application as administrator." << std::endl;
-                Sleep(3000);
+                std::this_thread::sleep_for(std::chrono::milliseconds(3000));
                 exit(EXIT_FAILURE);
             }
+            std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
-            Sleep(5000);
-            camZAddress = iniPRT(-0x00000298, { 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 });
-            leftNrightAdderss = camZAddress - 260;
+            camZAddress = initPRT(offsetGameToBaseAddress, offsets);
+            leftNrightAdderss = camZAddress - 264;
             upNdownAddress = camZAddress - 268;
             ReadProcessMemory(processHandle, (LPCVOID)(camZAddress), &zoomValue, sizeof(float), NULL);
             ReadProcessMemory(processHandle, (LPCVOID)(leftNrightAdderss), &leftNrightValue, sizeof(float), NULL);
             ReadProcessMemory(processHandle, (LPCVOID)(upNdownAddress), &upNdownValue, sizeof(float), NULL);
+
             while (true)
             {
                 Sleep(1000);
@@ -360,7 +395,6 @@ void init()
                     CloseHandle(processHandle);
                     break;
                 }
-                
             }
         }
         else
@@ -375,12 +409,9 @@ int main()
 {
     SetConsoleTitleA(titleGen(rand() % 300 + 300).c_str());
 
-    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)setupHook, 0, 0, 0);//mouse scroll thread
+    std::thread(setupHook).detach();
+    std::thread(mouseLR).detach();
+    std::thread(keyboard).detach();
 
-    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)mouseLR, 0, 0, 0);//mouseLR thread
-
-    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)keyboard, 0, 0, 0);//keyboar thread
-
-    init();
-    
+    findGame();
 }
