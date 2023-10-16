@@ -347,7 +347,7 @@ void init()
 
             Sleep(5000);
             camZAddress = iniPRT(-0x00000298, { 0x8, 0x18, 0x1A0, 0x30, 0x0, 0x8, 0x2B0 });
-            leftNrightAdderss = camZAddress - 264;
+            leftNrightAdderss = camZAddress - 260;
             upNdownAddress = camZAddress - 268;
             ReadProcessMemory(processHandle, (LPCVOID)(camZAddress), &zoomValue, sizeof(float), NULL);
             ReadProcessMemory(processHandle, (LPCVOID)(leftNrightAdderss), &leftNrightValue, sizeof(float), NULL);
